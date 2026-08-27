@@ -237,7 +237,7 @@ export function Player({ recordings, collection, setRecordings, setSelectedColle
               collection={collection}
               recording={recording}
               onPlay={openPlaybackModal}
-              onDelete={deleteRecording}
+              onDelete={(id) => setDeleteConfirmId(id)}
               recordingUrls={recordingUrls}
               metadataUrls={metadataUrls}
             />
