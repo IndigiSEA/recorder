@@ -9,8 +9,8 @@ import { Progress } from "@/components/ui/progress"
 import { addRecording, Collection, Recording, Timestamp, updateCollection } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
-import { useTranslations } from "next-intl"
 import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react"
+import { useAppLanguage } from "../language-provider"
 
 interface RecorderProps {
   collection: Collection
@@ -19,9 +19,6 @@ interface RecorderProps {
   isSupported: boolean
   setRecordings: Dispatch<SetStateAction<Recording[]>>
   cleanupStream: () => void
-  showError: (key: string, values?: Record<string, string>) => void
-  showSuccess: (key: string, values?: Record<string, string>) => void
-  t: ReturnType<typeof useTranslations>
 }
 
 // Preferred MIME types for audio recording in order of preference. The first supported type is used for MediaRecorder.
@@ -39,14 +36,12 @@ export function Recorder({
   cleanupStream,
   streamRef,
   isSupported,
-  showError,
-  showSuccess,
-  t,
 }: RecorderProps) {
   const chunksRef = useRef<BlobPart[]>([])
   const recordingStartRef = useRef<number>(0)
   const timestampsRef = useRef<Map<number, Timestamp[]>>(new Map())
 
+  const { t, onError, onSuccess } = useAppLanguage()
   const [isRecording, setIsRecording] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
@@ -108,9 +103,9 @@ export function Recorder({
       await addRecording(newRecording)
       await updateCollection(newCollection)
       setRecordings((prev) => [newRecording, ...prev])
-      showSuccess("success.recordingSaved")
+      onSuccess("success.recordingSaved")
     } catch (error) {
-      showError("errors.couldNotSaveRecording", { message: (error as Error).message })
+      onError("errors.couldNotSaveRecording", { message: (error as Error).message })
     }
     setIsSaving(false)
     cleanupStream()
@@ -149,7 +144,7 @@ export function Recorder({
       setIsRecording(true)
     } catch (error) {
       cleanupStream()
-      showError("errors.micDeniedOrUnavailable", { message: (error as Error).message })
+      onError("errors.micDeniedOrUnavailable", { message: (error as Error).message })
     }
   }
 
@@ -201,7 +196,7 @@ export function Recorder({
     if (!isRecording || selectedWordIndex === null || currentWordStartMs === null) return
 
     if (recordedWord.trim() === "" && !collection.translatedWords) {
-      showError("validation.enterWordBeforeEndTime")
+      onError("validation.enterWordBeforeEndTime")
       return
     }
 
@@ -342,9 +337,7 @@ export function Recorder({
             <p className="mb-2 text-sm text-muted-foreground">{t("recorder.selectedWordLabel")}</p>
             <p className="text-3xl font-bold text-foreground">{collection.words[selectedWordIndex]}</p>
           </div>
-          <div className="justify-center space-y-2 text-center">
-            {recorderWordInput(selectedWordIndex)}
-          </div>
+          <div className="justify-center space-y-2 text-center">{recorderWordInput(selectedWordIndex)}</div>
           <div className="flex flex-wrap justify-center gap-3">
             <Button
               size="lg"

@@ -17,17 +17,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collection, Recording, removeRecording, updateCollection } from "@/lib/db"
 import { extensionFor, formatBytes, formatDuration } from "@/lib/utils"
 import { Download, FileJson, Mic, MoreVertical, Play, Trash2 } from "lucide-react"
-import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
+import { useAppLanguage } from "../language-provider"
 
 interface PlayerProps {
   recordings: Recording[]
   collection: Collection
   setRecordings: (recordings: Recording[]) => void
   setSelectedCollection: (collection: Collection) => void
-  showError: (key: string, values?: Record<string, string>) => void
-  showSuccess: (key: string, values?: Record<string, string>) => void
-  t: ReturnType<typeof useTranslations>
 }
 
 /**
@@ -41,7 +38,6 @@ function RecordingItem({
   onDelete,
   recordingUrls,
   metadataUrls,
-  t,
 }: {
   collection: Collection
   recording: Recording
@@ -49,8 +45,8 @@ function RecordingItem({
   onDelete: (id: string) => void
   recordingUrls: Map<string, string>
   metadataUrls: Map<string, string>
-  t: ReturnType<typeof useTranslations>
 }) {
+  const { t } = useAppLanguage()
   // Get download links for recording and metadata from the provided maps.
   const recordingUrl = recordingUrls.get(recording.id)
   const metadataUrl = metadataUrls.get(recording.id)
@@ -134,10 +130,8 @@ export function Player({
   collection,
   setRecordings,
   setSelectedCollection,
-  showError,
-  showSuccess,
-  t,
 }: PlayerProps) {
+  const { t, onError, onSuccess } = useAppLanguage()
   const [recordingUrls, setRecordingUrls] = useState<Map<string, string>>(new Map())
   const [metadataUrls, setMetadataUrls] = useState<Map<string, string>>(new Map())
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null)
@@ -154,6 +148,9 @@ export function Player({
         createdAt: recording.createdAt.toISOString(),
         durationMs: recording.durationMs,
         timestamps: recording.timestamps,
+        participants: collection.participants || [],
+        interviewers: collection.interviewers || [],
+        assistants: collection.assistants || [],
       }
       nextUrls.set(recording.id, URL.createObjectURL(recording.blob))
       nextMetadata.set(
@@ -213,9 +210,9 @@ export function Player({
       if (selectedRecording?.id === id) {
         setSelectedRecording(null)
       }
-      showSuccess("success.recordingDeleted")
+      onSuccess("success.recordingDeleted")
     } catch (error) {
-      showError("errors.couldNotDeleteRecording", { message: (error as Error).message })
+      onError("errors.couldNotDeleteRecording", { message: (error as Error).message })
     }
   }
 
@@ -248,7 +245,6 @@ export function Player({
               onDelete={deleteRecording}
               recordingUrls={recordingUrls}
               metadataUrls={metadataUrls}
-              t={t}
             />
           ))}
         </div>

@@ -5,33 +5,24 @@ import { Recorder } from "@/components/audio/recorder"
 import { Button } from "@/components/ui/button"
 import { Collection, Recording, getRecordings } from "@/lib/db"
 import { ArrowLeft } from "lucide-react"
-import { useTranslations } from "next-intl"
 import { useEffect, useRef, useState } from "react"
+import { useAppLanguage } from "../language-provider"
 
 interface CollectionRecorderProps {
   collection: Collection
   setSelectedCollection: (collection: Collection) => void
   onBack: () => void
-  showError: (key: string, values?: Record<string, string>) => void
-  showSuccess: (key: string, values?: Record<string, string>) => void
-  t: ReturnType<typeof useTranslations>
 }
 
 /**
  * CollectionRecorder component allows users to record audio for a specific collection of texts. It provides
  * recording controls and displays saved recordings for playback.
  */
-export function CollectionRecorder({
-  collection,
-  setSelectedCollection,
-  onBack,
-  showError,
-  showSuccess,
-  t,
-}: CollectionRecorderProps) {
+export function CollectionRecorder({ collection, setSelectedCollection, onBack }: CollectionRecorderProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
+  const { t, onError, onSuccess } = useAppLanguage()
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [isSupported, setIsSupported] = useState(false)
 
@@ -47,7 +38,7 @@ export function CollectionRecorder({
       const recordings = await getRecordings(collection.id)
       setRecordings(recordings)
     } catch (error) {
-      showError("errors.couldNotLoadRecordings", { message: (error as Error).message })
+      onError("errors.couldNotLoadRecordings", { message: (error as Error).message })
     }
   }
 
@@ -100,9 +91,6 @@ export function CollectionRecorder({
           isSupported={isSupported}
           setRecordings={setRecordings}
           cleanupStream={cleanupStream}
-          showError={showError}
-          showSuccess={showSuccess}
-          t={t}
         />
 
         {/* Saved Recordings */}
@@ -111,9 +99,6 @@ export function CollectionRecorder({
           collection={collection}
           setRecordings={setRecordings}
           setSelectedCollection={setSelectedCollection}
-          showError={showError}
-          showSuccess={showSuccess}
-          t={t}
         />
       </div>
     </main>

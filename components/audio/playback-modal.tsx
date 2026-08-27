@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Recording } from "@/lib/db"
 import { formatBytes, formatDuration } from "@/lib/utils"
-import { useTranslations } from "next-intl"
 import { useRef, useState } from "react"
+import { useAppLanguage } from "../language-provider"
 
 /**
  * PlaybackModal component provides a modal dialog for playing back a selected audio recording. It displays the
@@ -20,7 +20,7 @@ export default function PlaybackModal({
   isPlaybackModalOpen: boolean
   onClose: () => void
 }) {
-  const t = useTranslations()
+  const { t } = useAppLanguage()
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
 

@@ -10,8 +10,8 @@ import {
 import { Collection, Timestamp } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, RotateCcw } from "lucide-react"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
+import { useAppLanguage } from "../language-provider"
 
 interface WordItemProps {
   word: string
@@ -116,7 +116,7 @@ export default function WordModal({
   selectedWordIndex: number | null
   selectWord: (index: number) => void
 }) {
-  const t = useTranslations()
+  const { t } = useAppLanguage()
   const [isWordModalOpen, setIsWordModalOpen] = useState(false)
 
   return (
