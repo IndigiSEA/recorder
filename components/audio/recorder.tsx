@@ -1,6 +1,7 @@
 "use client"
 
 import WordModal from "@/components/audio/word-modal"
+import { useAppLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,7 +11,6 @@ import { addRecording, Collection, Recording, Timestamp, updateCollection } from
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
 import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react"
-import { useAppLanguage } from "../language-provider"
 
 interface RecorderProps {
   collection: Collection

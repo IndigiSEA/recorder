@@ -1,3 +1,4 @@
+import { useAppLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,7 +12,6 @@ import { Collection, Timestamp } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, RotateCcw } from "lucide-react"
 import { useState } from "react"
-import { useAppLanguage } from "../language-provider"
 
 interface WordItemProps {
   word: string

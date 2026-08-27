@@ -1,6 +1,7 @@
 "use client"
 
 import PlaybackModal from "@/components/audio/playback-modal"
+import { useAppLanguage } from "@/components/language-provider"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +19,6 @@ import { Collection, Recording, removeRecording, updateCollection } from "@/lib/
 import { extensionFor, formatBytes, formatDuration } from "@/lib/utils"
 import { Download, FileJson, Mic, MoreVertical, Play, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useAppLanguage } from "../language-provider"
 
 interface PlayerProps {
   recordings: Recording[]
@@ -125,12 +125,7 @@ function RecordingItem({
  * Player component shows the recordings for a specific collection of texts. It allows users to play, download audio
  * files, export metadata and delete recordings.
  */
-export function Player({
-  recordings,
-  collection,
-  setRecordings,
-  setSelectedCollection,
-}: PlayerProps) {
+export function Player({ recordings, collection, setRecordings, setSelectedCollection }: PlayerProps) {
   const { t, onError, onSuccess } = useAppLanguage()
   const [recordingUrls, setRecordingUrls] = useState<Map<string, string>>(new Map())
   const [metadataUrls, setMetadataUrls] = useState<Map<string, string>>(new Map())

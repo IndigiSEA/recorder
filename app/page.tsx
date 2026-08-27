@@ -1,6 +1,7 @@
 "use client"
 
 import { CollectionRecorder } from "@/components/audio/collection-recorder"
+import { CreateCollectionDialog } from "@/components/forms/create-collection-modal"
 import { useAppLanguage } from "@/components/language-provider"
 import { SettingsDropdown } from "@/components/settings-dropdown"
 import {
@@ -19,7 +20,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Collection, getCollections, removeCollection } from "@/lib/db"
 import { FolderOpen, Mic, Trash2, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
-import { CreateCollectionDialog } from "@/components/forms/create-collection-modal"
 
 /**
  * Shows the card for a single collection with options to open or delete it.

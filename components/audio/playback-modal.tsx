@@ -1,8 +1,8 @@
+import { useAppLanguage } from "@/components/language-provider"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Recording } from "@/lib/db"
 import { formatBytes, formatDuration } from "@/lib/utils"
 import { useRef, useState } from "react"
-import { useAppLanguage } from "../language-provider"
 
 /**
  * PlaybackModal component provides a modal dialog for playing back a selected audio recording. It displays the

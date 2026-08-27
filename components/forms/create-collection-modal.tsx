@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import {
   Field,
   FieldContent,
@@ -19,27 +20,19 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSeparator,
-  FieldSet
+  FieldSet,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
+import { Item, ItemContent, ItemDescription } from "@/components/ui/item"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addCollection, Collection } from "@/lib/db"
 import { collectionTypes, CollectionTypeValue, parseCSVFile, Word } from "@/lib/parse-csv"
 import { zodResolver } from "@hookform/resolvers/zod"
-import {
-  CirclePlus,
-  FileSpreadsheet,
-  Plus,
-  Trash2,
-  Upload,
-  XIcon
-} from "lucide-react"
+import { CirclePlus, FileSpreadsheet, Plus, Trash2, Upload, XIcon } from "lucide-react"
 import { Dispatch, SetStateAction, useState } from "react"
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty"
-import { Item, ItemContent, ItemDescription } from "../ui/item"
 
 /**
  * Dialog for creating a new collection. The user inputs a collection name, enters the name of participants,

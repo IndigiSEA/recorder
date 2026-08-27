@@ -3,11 +3,11 @@
 import { CollectionDetails } from "@/components/audio/collection-details"
 import { Player } from "@/components/audio/player"
 import { Recorder } from "@/components/audio/recorder"
+import { useAppLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
 import { Collection, Recording, getRecordings } from "@/lib/db"
 import { ArrowLeft } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
-import { useAppLanguage } from "../language-provider"
 
 interface CollectionRecorderProps {
   collection: Collection
@@ -23,7 +23,7 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  const { t, onError, onSuccess } = useAppLanguage()
+  const { t, onError } = useAppLanguage()
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [isSupported, setIsSupported] = useState(false)
 
