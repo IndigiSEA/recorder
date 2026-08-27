@@ -76,7 +76,6 @@
   "recordingSession": {
     "backToCollections": "Back to Collections",
     "kicker": "Recording Session",
-    "wordsInCollection": "{count} words in this collection",
     "browserNotSupported": "This browser does not support audio recording. Try Chrome, Edge, or Safari."
   },
   "recorder": {
@@ -105,6 +104,15 @@
   },
   "recordings": {
     "summaryLine": "{duration} - {size} - {count} words marked"
+  },
+  "collectionDetails": {
+    "sectionTitle": "Collection Details",
+    "wordCountLabel": "Word Count",
+    "createdAtLabel": "Created At",
+    "typeLabel": "Collection Type",
+    "participantsLabel": "Participants",
+    "interviewersLabel": "Interviewers",
+    "assistantsLabel": "Assistants"
   },
   "player": {
     "sectionTitle": "Saved Recordings",

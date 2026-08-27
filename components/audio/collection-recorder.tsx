@@ -1,5 +1,6 @@
 "use client"
 
+import { CollectionDetails } from "@/components/audio/collection-details"
 import { Player } from "@/components/audio/player"
 import { Recorder } from "@/components/audio/recorder"
 import { Button } from "@/components/ui/button"
@@ -60,38 +61,39 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
 
   return (
     <main className="min-h-svh bg-background px-4 py-8">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <header className="space-y-4">
-          <Button variant="ghost" onClick={onBack} className="-ml-2 gap-2">
-            <ArrowLeft className="size-4" />
-            {t("recordingSession.backToCollections")}
-          </Button>
-          <div className="space-y-2">
-            <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-              {t("recordingSession.kicker")}
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">{collection.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("recordingSession.wordsInCollection", { count: collection.words.length })}
-            </p>
-          </div>
-        </header>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+        <div className="space-y-4">
+          <header className="space-y-4">
+            <Button variant="ghost" onClick={onBack} className="-ml-2 gap-2">
+              <ArrowLeft className="size-4" />
+              {t("recordingSession.backToCollections")}
+            </Button>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+                {t("recordingSession.kicker")}
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">{collection.name}</h1>
+            </div>
+          </header>
 
-        {!isSupported && (
-          <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
-            {t("recordingSession.browserNotSupported")}
-          </div>
-        )}
+          {!isSupported && (
+            <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+              {t("recordingSession.browserNotSupported")}
+            </div>
+          )}
 
-        {/* Recording Controls */}
-        <Recorder
-          collection={collection}
-          streamRef={streamRef}
-          mediaRecorderRef={mediaRecorderRef}
-          isSupported={isSupported}
-          setRecordings={setRecordings}
-          cleanupStream={cleanupStream}
-        />
+          {/* Recording Controls */}
+          <Recorder
+            collection={collection}
+            streamRef={streamRef}
+            mediaRecorderRef={mediaRecorderRef}
+            isSupported={isSupported}
+            setRecordings={setRecordings}
+            cleanupStream={cleanupStream}
+          />
+        </div>
+
+        <CollectionDetails collection={collection} />
 
         {/* Saved Recordings */}
         <Player

@@ -106,6 +106,15 @@
   "recordings": {
     "summaryLine": "{duration} - {size} - {count} perkataan ditandakan"
   },
+  "collectionDetails": {
+    "sectionTitle": "Maklumat Koleksi",
+    "wordCountLabel": "Bilangan Perkataan",
+    "createdAtLabel": "Dicipta Pada",
+    "typeLabel": "Jenis Koleksi",
+    "participantsLabel": "Peserta",
+    "interviewersLabel": "Penanya",
+    "assistantsLabel": "Assistants"
+  },
   "player": {
     "sectionTitle": "Rakaman Disimpan",
     "empty": "Tiada rakaman lagi. Mulakan rakaman untuk mencipta satu.",
