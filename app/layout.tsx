@@ -15,9 +15,9 @@ const fontMono = Geist_Mono({
 })
 
 // Metadata to show in search results and messaging previews
-const APP_NAME = "Indigisea Recorder"
-const APP_DEFAULT_TITLE = "Indigisea Recorder"
-const APP_TITLE_TEMPLATE = "%s - Indigisea Recorder"
+const APP_NAME = "IndigiSEA Recorder"
+const APP_DEFAULT_TITLE = "IndigiSEA Recorder"
+const APP_TITLE_TEMPLATE = "%s - IndigiSEA Recorder"
 const APP_DESCRIPTION = "Recording words from the indigenous community"
 
 export const metadata: Metadata = {

@@ -1,8 +1,8 @@
 {
   "brand": {
-    "appName": "Indigisea Recorder",
-    "shortName": "Indigisea",
-    "titleTemplate": "%s - Indigisea Recorder",
+    "appName": "IndigiSEA Recorder",
+    "shortName": "IndigiSEA",
+    "titleTemplate": "%s - IndigiSEA Recorder",
     "description": "Recording words from the indigenous community"
   },
   "common": {
@@ -45,7 +45,7 @@
   },
   "home": {
     "headerKicker": "Offline Word Recorder",
-    "headerTitle": "Indigisea Voice Archive",
+    "headerTitle": "IndigiSEA Voice Archive",
     "headerDescription": "Upload a CSV with words to create a collection, then record pronunciations with timestamps for each word.",
     "createCollectionButton": "Create Collection",
     "createDialogTitle": "Create New Collection",
@@ -139,7 +139,7 @@
   "offline": {
     "kicker": "Offline Mode",
     "title": "No Connection Needed",
-    "description": "Indigisea Recorder is available offline. Return to the home screen to continue recording.",
+    "description": "IndigiSEA Recorder is available offline. Return to the home screen to continue recording.",
     "goToRecorder": "Go to Recorder"
   },
   "settings": {

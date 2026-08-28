@@ -1,8 +1,8 @@
 {
   "brand": {
-    "appName": "Perakam Indigisea",
-    "shortName": "Indigisea",
-    "titleTemplate": "%s - Perakam Indigisea",
+    "appName": "Perakam IndigiSEA",
+    "shortName": "IndigiSEA",
+    "titleTemplate": "%s - Perakam IndigiSEA",
     "description": "Merakam perkataan daripada komuniti pribumi"
   },
   "common": {
@@ -45,7 +45,7 @@
   },
   "home": {
     "headerKicker": "Perakam Perkataan Luar Talian",
-    "headerTitle": "Arkib Suara Indigisea",
+    "headerTitle": "Arkib Suara IndigiSEA",
     "headerDescription": "Muat naik CSV dengan perkataan untuk mencipta koleksi, kemudian rakam sebutan dengan tanda masa untuk setiap perkataan.",
     "createCollectionButton": "Cipta Koleksi",
     "createDialogTitle": "Cipta Koleksi Baru",
@@ -140,7 +140,7 @@
   "offline": {
     "kicker": "Mod Luar Talian",
     "title": "Tidak Memerlukan Sambungan",
-    "description": "Perakam Indigisea boleh digunakan tanpa sambungan internet. Kembali ke skrin utama untuk terus merakam.",
+    "description": "Perakam IndigiSEA boleh digunakan tanpa sambungan internet. Kembali ke skrin utama untuk terus merakam.",
     "goToRecorder": "Pergi ke Perakam"
   },
   "settings": {
