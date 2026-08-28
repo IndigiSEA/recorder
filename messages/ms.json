@@ -12,7 +12,8 @@
     "exportMetadata": "Eksport Metadata",
     "downloadAudio": "Muat Turun Audio",
     "openMenuSrOnly": "Buka menu",
-    "progress": "Kemajuan"
+    "progress": "Kemajuan",
+    "confirm": "Sahkan"
   },
   "errors": {
     "couldNotLoadCollections": "Tidak dapat memuatkan koleksi: {message}",
@@ -77,7 +78,9 @@
     "backToCollections": "Kembali ke Koleksi",
     "kicker": "Sesi Rakaman",
     "wordsInCollection": "{count} perkataan dalam koleksi ini",
-    "browserNotSupported": "Pelayar ini tidak menyokong rakaman audio. Cuba Chrome, Edge, atau Safari."
+    "browserNotSupported": "Pelayar ini tidak menyokong rakaman audio. Cuba Chrome, Edge, atau Safari.",
+    "leaveRecordingSession": "Tinggalkan Sesi Rakaman",
+    "leaveDescription": "Adakah anda pasti mahu meninggalkan sesi rakaman ini? Rakaman akan dihentikan serta-merta dan sebarang perubahan yang tidak disimpan akan hilang."
   },
   "recorder": {
     "cardTitle": "Rakam Perkataan",

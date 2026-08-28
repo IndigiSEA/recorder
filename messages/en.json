@@ -12,7 +12,8 @@
     "exportMetadata": "Export Metadata",
     "downloadAudio": "Download Audio",
     "openMenuSrOnly": "Open menu",
-    "progress": "Progress"
+    "progress": "Progress",
+    "confirm": "Confirm"
   },
   "errors": {
     "couldNotLoadCollections": "Could not load collections: {message}",
@@ -76,7 +77,9 @@
   "recordingSession": {
     "backToCollections": "Back to Collections",
     "kicker": "Recording Session",
-    "browserNotSupported": "This browser does not support audio recording. Try Chrome, Edge, or Safari."
+    "browserNotSupported": "This browser does not support audio recording. Try Chrome, Edge, or Safari.",
+    "leaveRecordingSession": "Leave Recording Session",
+    "leaveDescription": "Are you sure you want to leave this recording session? The recording will be stopped immediately and any unsaved changes will be lost."
   },
   "recorder": {
     "cardTitle": "Record Words",

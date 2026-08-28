@@ -8,6 +8,16 @@ import { Button } from "@/components/ui/button"
 import { Collection, Recording, getRecordings } from "@/lib/db"
 import { ArrowLeft } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface CollectionRecorderProps {
   collection: Collection
@@ -26,6 +36,8 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
   const { t, onError } = useAppLanguage()
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [isSupported, setIsSupported] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
 
   // Cleanup function to stop all tracks of the media stream and reset the stream reference
   const cleanupStream = () => {
@@ -59,12 +71,31 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
     }
   }, [collection.id])
 
+  // Detect when the user navigates away from the page to prevent accidental loss of data.
+  useEffect(() => {
+    if (!isRecording) return
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = true // Included for legacy support, e.g. Chrome/Edge < 119
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    }
+  }, [isRecording])
+
   return (
     <main className="min-h-svh bg-background px-4 py-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <div className="space-y-4">
           <header className="space-y-4">
-            <Button variant="ghost" onClick={onBack} className="-ml-2 gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => (isRecording ? setShowConfirmationDialog(true) : onBack())}
+              className="-ml-2 gap-2"
+            >
               <ArrowLeft className="size-4" />
               {t("recordingSession.backToCollections")}
             </Button>
@@ -87,6 +118,8 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
             collection={collection}
             streamRef={streamRef}
             mediaRecorderRef={mediaRecorderRef}
+            isRecording={isRecording}
+            setIsRecording={setIsRecording}
             isSupported={isSupported}
             setRecordings={setRecordings}
             cleanupStream={cleanupStream}
@@ -103,6 +136,18 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
           setSelectedCollection={setSelectedCollection}
         />
       </div>
+      <AlertDialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("recordingSession.leaveRecordingSession")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("recordingSession.leaveDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={onBack}>{t("common.confirm")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }

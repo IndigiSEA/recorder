@@ -17,6 +17,8 @@ interface RecorderProps {
   streamRef: RefObject<MediaStream | null>
   mediaRecorderRef: RefObject<MediaRecorder | null>
   isSupported: boolean
+  isRecording: boolean
+  setIsRecording: Dispatch<SetStateAction<boolean>>
   setRecordings: Dispatch<SetStateAction<Recording[]>>
   cleanupStream: () => void
 }
@@ -32,6 +34,8 @@ const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
 export function Recorder({
   collection,
   mediaRecorderRef,
+  isRecording,
+  setIsRecording,
   setRecordings,
   cleanupStream,
   streamRef,
@@ -42,7 +46,6 @@ export function Recorder({
   const timestampsRef = useRef<Map<number, Timestamp[]>>(new Map())
 
   const { t, onError, onSuccess } = useAppLanguage()
-  const [isRecording, setIsRecording] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [timestamps, setTimestamps] = useState<Map<number, Timestamp[]>>(new Map())
