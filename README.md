@@ -6,13 +6,13 @@ An offline-first Progressive Web Application using Next.js and Serwist to enable
 1. Install Dependencies:
 
     ```bash
-    npm install
+    pnpm install
     ```
 
 2. Start the Development Server
 
     ```bash
-    npm run dev
+    pnpm dev
     ```
 3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the app.
 
