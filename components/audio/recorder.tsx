@@ -26,6 +26,10 @@ interface RecorderProps {
 // Preferred MIME types for audio recording in order of preference. The first supported type is used for MediaRecorder.
 const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
 
+// Flush encoded audio every 30s instead of buffering the whole session until stop() because long recordings on iOS 
+// can hit WebKit's memory limits and cause the page to be killed/reloaded.
+const RECORDING_TIMESLICE_MS = 30_000
+
 /**
  * Recorder component allows users to record audio for a specific collection of texts. It provides recording controls
  * to marking timestamps for individual texts within the collection, and saves the recordings along with their
@@ -143,7 +147,7 @@ export function Recorder({
 
       // Start recording and note the start time to calculate timestamps for marked words.
       recordingStartRef.current = Date.now()
-      mediaRecorder.start()
+      mediaRecorder.start(RECORDING_TIMESLICE_MS)
       setIsRecording(true)
     } catch (error) {
       cleanupStream()
