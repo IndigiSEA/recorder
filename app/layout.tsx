@@ -75,9 +75,9 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "overscroll-y-contain")}
+      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "overscroll-none")}
     >
-      <body>
+      <body className="overscroll-y-contain">
         <ThemeProvider>
           <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
         </ThemeProvider>
