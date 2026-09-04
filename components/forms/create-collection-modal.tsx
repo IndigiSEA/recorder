@@ -210,7 +210,7 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
   }
 
   const isSubmitDisabled = words.length === 0 || form.formState.isSubmitting
-  console.log(form.formState.isSubmitting)
+
   return (
     <Dialog open={isCreateDialogOpen} onOpenChange={resetDialogState}>
       <DialogTrigger asChild>
