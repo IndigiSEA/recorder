@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import type { Metadata, Viewport } from "next"
 import { getLocale } from "next-intl/server"
 import { Geist_Mono, Inter } from "next/font/google"
+import APP_INFO from "./app-info.json"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -15,35 +16,42 @@ const fontMono = Geist_Mono({
 })
 
 // Metadata to show in search results and messaging previews
-const APP_NAME = "IndigiSEA Recorder"
-const APP_DEFAULT_TITLE = "IndigiSEA Recorder"
-const APP_TITLE_TEMPLATE = "%s - IndigiSEA Recorder"
-const APP_DESCRIPTION = "Recording words from the indigenous community"
-
 export const metadata: Metadata = {
-  applicationName: APP_NAME,
+  applicationName: APP_INFO.name,
   title: {
-    default: APP_DEFAULT_TITLE,
-    template: APP_TITLE_TEMPLATE,
+    default: APP_INFO.defaultTitle,
+    template: APP_INFO.titleTemplate,
   },
-  description: APP_DESCRIPTION,
+  description: APP_INFO.description,
   appleWebApp: {
-    capable: true,
+    capable: false,
     statusBarStyle: "default",
-    title: APP_DEFAULT_TITLE,
+    title: APP_INFO.defaultTitle,
     // startUpImage: [],
   },
   formatDetection: {
     telephone: false,
   },
+  metadataBase: new URL(
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : "http://localhost:3000")
+  ),
   openGraph: {
     type: "website",
-    siteName: APP_NAME,
+    siteName: APP_INFO.name,
     title: {
-      default: APP_DEFAULT_TITLE,
-      template: APP_TITLE_TEMPLATE,
+      default: APP_INFO.defaultTitle,
+      template: APP_INFO.titleTemplate,
     },
-    description: APP_DESCRIPTION,
+    description: APP_INFO.description,
+    images: [
+      {
+        url: "/icons/logo-512x512.png",
+        width: 512,
+        height: 512,
+      },
+    ],
   },
 }
 

@@ -1,0 +1,7 @@
+{
+  "name": "IndigiSEA Recorder",
+  "shortName": "IndigiSEA App",
+  "defaultTitle": "IndigiSEA Recorder",
+  "titleTemplate": "%s - IndigiSEA Recorder",
+  "description": "Recording words from the indigenous community"
+}
