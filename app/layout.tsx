@@ -33,9 +33,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   metadataBase: new URL(
-      (process.env.VERCEL_PROJECT_PRODUCTION_URL
-        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : "http://localhost:3000")
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000"
   ),
   openGraph: {
     type: "website",
@@ -75,15 +75,15 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "h-full overflow-hidden")}
+      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "overflow-hidden")}
     >
-      <body className="h-full overflow-hidden">
-        <div className="h-full overflow-y-auto [-webkit-overflow-scrolling:touch]">
-        <ThemeProvider>
-          <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
-        </ThemeProvider>
-        <Toaster />
+      <body className="fixed inset-0 overflow-hidden">
+        <div className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+          <ThemeProvider>
+            <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
+          </ThemeProvider>
         </div>
+        <Toaster />
       </body>
     </html>
   )
