@@ -77,8 +77,8 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "h-full overflow-hidden")}
     >
-      <body className="h-full w-full fixed overflow-hidden">
-        <div className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+      <body className="h-full overflow-hidden">
+        <div className="h-full overflow-y-auto [-webkit-overflow-scrolling:touch]">
         <ThemeProvider>
           <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
         </ThemeProvider>
