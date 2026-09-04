@@ -75,13 +75,15 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "overscroll-y-contain")}
+      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "h-full overflow-hidden")}
     >
-      <body className="overscroll-y-none">
+      <body className="h-full w-full fixed overflow-hidden">
+        <div className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
         <ThemeProvider>
           <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
         </ThemeProvider>
         <Toaster />
+        </div>
       </body>
     </html>
   )
