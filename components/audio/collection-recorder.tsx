@@ -4,20 +4,8 @@ import { CollectionDetails } from "@/components/audio/collection-details"
 import { Player } from "@/components/audio/player"
 import { Recorder } from "@/components/audio/recorder"
 import { useAppLanguage } from "@/components/language-provider"
-import { Button } from "@/components/ui/button"
 import { Collection, Recording, getRecordings } from "@/lib/db"
-import { ArrowLeft } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { useEffect, useState } from "react"
 
 interface CollectionRecorderProps {
   collection: Collection
@@ -30,20 +18,8 @@ interface CollectionRecorderProps {
  * recording controls and displays saved recordings for playback.
  */
 export function CollectionRecorder({ collection, setSelectedCollection, onBack }: CollectionRecorderProps) {
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-
-  const { t, onError } = useAppLanguage()
+  const { onError } = useAppLanguage()
   const [recordings, setRecordings] = useState<Recording[]>([])
-  const [isSupported, setIsSupported] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
-  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
-
-  // Cleanup function to stop all tracks of the media stream and reset the stream reference
-  const cleanupStream = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    streamRef.current = null
-  }
 
   // Load recordings for the current collection from the local database
   const loadRecordings = async () => {
@@ -55,79 +31,16 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
     }
   }
 
-  // Checks browser support for media devices and MediaRecorder API, loads recordings, and sets up cleanup on unmount
+  // Load the user's recordings when the component mounts
   useEffect(() => {
-    setIsSupported(
-      typeof window !== "undefined" && "mediaDevices" in navigator && typeof window.MediaRecorder !== "undefined"
-    )
-
     loadRecordings()
-
-    return () => {
-      cleanupStream()
-      if (mediaRecorderRef.current?.state === "recording") {
-        mediaRecorderRef.current.stop()
-      }
-    }
-  }, [collection.id])
-
-  // Detect when the user navigates away from the page to prevent accidental loss of data.
-  useEffect(() => {
-    if (!isRecording) return
-
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = true // Included for legacy support, e.g. Chrome/Edge < 119
-    }
-
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload)
-    }
-  }, [isRecording])
+  }, [])
 
   return (
     <main className="min-h-svh bg-background px-4 py-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-        <div className="space-y-4">
-          <header className="space-y-4">
-            <Button
-              variant="ghost"
-              onClick={() => (isRecording ? setShowConfirmationDialog(true) : onBack())}
-              className="-ml-2 gap-2"
-            >
-              <ArrowLeft className="size-4" />
-              {t("recordingSession.backToCollections")}
-            </Button>
-            <div className="space-y-2">
-              <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                {t("recordingSession.kicker")}
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground">{collection.name}</h1>
-            </div>
-          </header>
-
-          {!isSupported && (
-            <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
-              {t("recordingSession.browserNotSupported")}
-            </div>
-          )}
-
-          {/* Recording Controls */}
-          <Recorder
-            collection={collection}
-            streamRef={streamRef}
-            mediaRecorderRef={mediaRecorderRef}
-            isRecording={isRecording}
-            setIsRecording={setIsRecording}
-            isSupported={isSupported}
-            setRecordings={setRecordings}
-            cleanupStream={cleanupStream}
-          />
-        </div>
-
+        <Recorder collection={collection} setRecordings={setRecordings} onBack={onBack} />
         <CollectionDetails collection={collection} />
-
         {/* Saved Recordings */}
         <Player
           recordings={recordings}
@@ -136,18 +49,6 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
           setSelectedCollection={setSelectedCollection}
         />
       </div>
-      <AlertDialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("recordingSession.leaveRecordingSession")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("recordingSession.leaveDescription")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={onBack}>{t("common.confirm")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </main>
   )
 }

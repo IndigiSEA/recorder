@@ -1,421 +1,121 @@
 "use client"
 
-import WordModal from "@/components/audio/word-modal"
 import { useAppLanguage } from "@/components/language-provider"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { addRecording, Collection, Recording, Timestamp, updateCollection } from "@/lib/db"
-import { formatDuration } from "@/lib/utils"
-import { Check, Mic, Play, Square } from "lucide-react"
-import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react"
+import { Collection, Recording } from "@/lib/db"
+import { ArrowLeft } from "lucide-react"
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
+import { WordRecorder } from "./word-recorder"
 
 interface RecorderProps {
   collection: Collection
-  streamRef: RefObject<MediaStream | null>
-  mediaRecorderRef: RefObject<MediaRecorder | null>
-  isSupported: boolean
-  isRecording: boolean
-  setIsRecording: Dispatch<SetStateAction<boolean>>
   setRecordings: Dispatch<SetStateAction<Recording[]>>
-  cleanupStream: () => void
+  onBack: () => void
 }
 
-// Preferred MIME types for audio recording in order of preference. The first supported type is used for MediaRecorder.
-const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
+export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
+  const streamRef = useRef<MediaStream | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
-// Flush encoded audio every 30s instead of buffering the whole session until stop() because long recordings on iOS 
-// can hit WebKit's memory limits and cause the page to be killed/reloaded.
-const RECORDING_TIMESLICE_MS = 30_000
+  const { t } = useAppLanguage()
+  const [isSupported, setIsSupported] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
 
-/**
- * Recorder component allows users to record audio for a specific collection of texts. It provides recording controls
- * to marking timestamps for individual texts within the collection, and saves the recordings along with their
- * timestamps.
- */
-export function Recorder({
-  collection,
-  mediaRecorderRef,
-  isRecording,
-  setIsRecording,
-  setRecordings,
-  cleanupStream,
-  streamRef,
-  isSupported,
-}: RecorderProps) {
-  const chunksRef = useRef<BlobPart[]>([])
-  const recordingStartRef = useRef<number>(0)
-  const timestampsRef = useRef<Map<number, Timestamp[]>>(new Map())
-
-  const { t, onError, onSuccess } = useAppLanguage()
-  const [isSaving, setIsSaving] = useState(false)
-  const [activeDurationMs, setActiveDurationMs] = useState(0)
-  const [timestamps, setTimestamps] = useState<Map<number, Timestamp[]>>(new Map())
-  const [selectedWordIndex, setSelectedWordIndex] = useState<number | null>(null)
-  const [currentWordStartMs, setCurrentWordStartMs] = useState<number | null>(null)
-  const [recordedWord, setRecordedWord] = useState<string>("")
-  const [wordEndMarked, setWordEndMarked] = useState(false)
-
-  // Set to default state when recording stops or is cancelled (when the user navigates back)
-  const resetRecordingState = () => {
-    chunksRef.current = []
-    timestampsRef.current = new Map()
-    setSelectedWordIndex(null)
-    setTimestamps(new Map())
+  // Cleanup function to stop all tracks of the media stream and reset the stream reference
+  const cleanupStream = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
   }
 
-  // Saves the recorded audio and timestamps to the local database, and updates the collection's wordRecorded state.
-  const saveRecording = async () => {
-    try {
-      const durationMs = Date.now() - recordingStartRef.current
-
-      const blob = new Blob(chunksRef.current, {
-        type: mediaRecorderRef.current!.mimeType || "audio/webm",
-      })
-
-      if (blob.size === 0) {
-        throw new Error(t("recorder.recordingEmpty"))
-      }
-
-      // Sort timestamps by id and flatten the timestamps of each text into a single array.
-      const timestampsArray = Array.from(timestampsRef.current.entries())
-        .sort((a, b) => a[0] - b[0])
-        .map(([_, timestamp]) => timestamp)
-        .flat()
-
-      // Update the collection's wordRecorded boolean array to mark words that have been recorded.
-      const recordedWords = collection.wordRecorded
-      for (const index of timestampsRef.current.keys()) {
-        recordedWords[index] = true
-      }
-
-      const newRecording = {
-        id: crypto.randomUUID(),
-        collectionId: collection.id,
-        createdAt: new Date(),
-        durationMs,
-        size: blob.size,
-        mimeType: blob.type,
-        blob,
-        timestamps: timestampsArray,
-      }
-
-      const newCollection = {
-        ...collection,
-        wordRecorded: recordedWords,
-      }
-
-      await addRecording(newRecording)
-      await updateCollection(newCollection)
-      setRecordings((prev) => [newRecording, ...prev])
-      onSuccess("success.recordingSaved")
-    } catch (error) {
-      onError("errors.couldNotSaveRecording", { message: (error as Error).message })
-    }
-    setIsSaving(false)
-    cleanupStream()
-  }
-
-  // Starts recording audio from the user's microphone with the MediaRecorder API
-  const startRecording = async () => {
-    if (!isSupported || isRecording || isSaving) return
-
-    try {
-      // Request microphone access and start the MediaRecorder with the preferred MIME type supported by the browser.
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-
-      const mimeType = preferredTypes.find((candidate) => MediaRecorder.isTypeSupported(candidate))
-      const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      resetRecordingState()
-
-      // Collect the recorded audio data in chunks as it becomes available.
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data)
-        }
-      }
-
-      // Save the recording when the user stops it
-      mediaRecorder.onstop = async () => {
-        setIsSaving(true)
-        await saveRecording()
-      }
-
-      // Start recording and note the start time to calculate timestamps for marked words.
-      recordingStartRef.current = Date.now()
-      mediaRecorder.start(RECORDING_TIMESLICE_MS)
-      setIsRecording(true)
-    } catch (error) {
-      cleanupStream()
-      onError("errors.micDeniedOrUnavailable", { message: (error as Error).message })
-    }
-  }
-
-  // Stops and saves the recording
-  const stopRecording = () => {
-    const mediaRecorder = mediaRecorderRef.current
-    if (!mediaRecorder || mediaRecorder.state !== "recording") return
-    setIsRecording(false)
-    mediaRecorder.stop()
-  }
-
-  // Selects a text from the collection to mark timestamps for.
-  const selectWord = (index: number) => {
-    if (!isRecording) return
-
-    if (currentWordStartMs !== null && selectedWordIndex !== null) {
-      // End the current text if one is active before selecting a new text to mark.
-      markEnd()
-      if (recordedWord.trim() !== "") {
-        setSelectedWordIndex(index)
-        setCurrentWordStartMs(null)
-        setRecordedWord("")
-        setWordEndMarked(false)
-      }
-    } else {
-      setSelectedWordIndex(index)
-      setCurrentWordStartMs(null)
-      setRecordedWord("")
-      setWordEndMarked(false)
-
-      if (timestamps.has(index)) {
-        // Use the last recorded word for the selected text if it has been marked before, to allow the user to edit it.
-        const timestamp = timestamps.get(index)!
-        setRecordedWord(timestamp[timestamp.length - 1].recordedWord)
-      }
-    }
-  }
-
-  // Marks the start time for the currently selected text, allowing the user to mark the end time later.
-  const markStart = () => {
-    if (!isRecording || selectedWordIndex === null) return
-    const startMs = Date.now() - recordingStartRef.current
-    setWordEndMarked(false)
-    setCurrentWordStartMs(startMs)
-  }
-
-  // Marks the end time for the currently selected text
-  const markEnd = () => {
-    if (!isRecording || selectedWordIndex === null || currentWordStartMs === null) return
-
-    if (recordedWord.trim() === "" && !collection.translatedWords) {
-      onError("validation.enterWordBeforeEndTime")
-      return
-    }
-
-    const endMs = Date.now() - recordingStartRef.current
-    const word = collection.words[selectedWordIndex]
-    const wordId = collection.wordIds[selectedWordIndex]
-
-    // Use the translated word for audio collections, and user input for transcript collections
-    const timestamp = {
-      word,
-      wordId,
-      startMs: currentWordStartMs,
-      endMs,
-      recordedWord: collection.translatedWords ? collection.translatedWords[selectedWordIndex] : recordedWord.trim(),
-    }
-
-    setTimestamps((prev) => {
-      // Update the timestamps map with the new timestamp for the selected text, keeping previously marked timestamps
-      const next = new Map(prev)
-      const pastTimestamps = next.get(selectedWordIndex)
-
-      if (pastTimestamps === undefined) {
-        next.set(selectedWordIndex, [timestamp])
-      } else {
-        next.set(selectedWordIndex, [...pastTimestamps, timestamp])
-      }
-
-      timestampsRef.current = next
-      return next
-    })
-    setCurrentWordStartMs(null)
-    setWordEndMarked(true)
-  }
-
-  // Updates the active recording duration every 50ms while recording, and resets it when recording stops.
+  // Checks browser support for media devices and MediaRecorder API, loads recordings, and sets up cleanup on unmount
   useEffect(() => {
-    if (!isRecording) {
-      setActiveDurationMs(0)
-      return
-    }
-
-    const interval = window.setInterval(() => {
-      setActiveDurationMs(Date.now() - recordingStartRef.current)
-    }, 50)
+    setIsSupported(
+      typeof window !== "undefined" && "mediaDevices" in navigator && typeof window.MediaRecorder !== "undefined"
+    )
 
     return () => {
-      window.clearInterval(interval)
+      cleanupStream()
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stop()
+      }
+    }
+  }, [collection.id])
+
+  // Detect when the user navigates away from the page to prevent accidental loss of data.
+  useEffect(() => {
+    if (!isRecording) return
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = true // Included for legacy support, e.g. Chrome/Edge < 119
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
     }
   }, [isRecording])
 
-  const markedCount = timestamps.size
-  const progress = isRecording ? (markedCount / collection.words.length) * 100 : 0
-
-  // Displays the input field for transcript collections, or the translated word for audio collections based on the
-  // selected text index.
-  const recorderWordInput = (selectedWordIndex: number) => {
-    if (collection.translatedWords) {
-      // Audio types will use the translated word
-      const originalTranslation = collection.translatedWords[selectedWordIndex]
-      return (
-        <>
-          <p className="mb-2 text-sm text-muted-foreground">{t("recorder.translatedWordLabel")}</p>
-          <p className="text-3xl font-bold text-foreground">{originalTranslation}</p>
-        </>
-      )
-    }
-
-    // Only allow input for transcript collections
-    return (
-      <>
-        <Label htmlFor="translation" className="text-sm">
-          {t("recorder.translationLabel")}
-        </Label>
-        <Input
-          id="translation"
-          placeholder={t("recorder.translationPlaceholder")}
-          value={recordedWord}
-          onChange={(e) => setRecordedWord(e.target.value)}
-          disabled={wordEndMarked}
-        />
-      </>
-    )
-  }
-
-  const WordRecordingStatus = ({ wordIndex }: { wordIndex: number }) => {
-    if (timestamps.has(wordIndex) && currentWordStartMs === null) {
-      // Displays the recorded duration for the word if it has been marked and the user is not currently marking it.
-      const pastTimestamps = timestamps.get(wordIndex)!
-      const lastTimestamp = pastTimestamps[pastTimestamps.length - 1]
-
-      return (
-        <div className="flex items-center justify-center gap-2 text-center text-sm text-primary">
-          <Check className="size-4" />
-          {t("recorder.recordedRange", {
-            start: formatDuration(lastTimestamp.startMs),
-            end: formatDuration(lastTimestamp.endMs),
-          })}
-        </div>
-      )
-    } else if (currentWordStartMs !== null) {
-      // Displays the current start time for the word if it is being marked and the end time has not been marked yet.
-      return (
-        <div className="flex items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-          <Mic className="size-4" />
-          {t("recorder.startedAt", {
-            time: formatDuration(currentWordStartMs),
-          })}
-        </div>
-      )
-    } else {
-      // Displays a hint to the user on how to mark the start and end times for the word if it has not been marked yet.
-      return (
-        <div className="flex items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-          {t("recorder.markDescription")}
-        </div>
-      )
-    }
-  }
-
-  // Displays the recording interface, including progress, current text controls, and the word selection modal.
-  const recording = (
-    <>
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">{t("common.progress")}</span>
-          <span className="font-medium">
-            {t("recorder.progressCount", { marked: markedCount, total: collection.words.length })}
-          </span>
-        </div>
-        <Progress value={progress} />
-      </div>
-
-      {/* Current Word Controls */}
-      {selectedWordIndex !== null && (
-        <div className="space-y-4 rounded-lg border bg-muted/50 p-6">
-          <div className="text-center">
-            <p className="mb-2 text-sm text-muted-foreground">{t("recorder.selectedWordLabel")}</p>
-            <p className="text-3xl font-bold text-foreground">{collection.words[selectedWordIndex]}</p>
-          </div>
-          <div className="justify-center space-y-2 text-center">{recorderWordInput(selectedWordIndex)}</div>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              size="lg"
-              onClick={currentWordStartMs === null ? markStart : markEnd}
-              className="min-w-[160px] gap-2"
-            >
-              <Play className="size-5" />
-              {currentWordStartMs === null ? t("recorder.markStart") : t("recorder.markEnd")}
-            </Button>
-          </div>
-          <WordRecordingStatus wordIndex={selectedWordIndex} />
-        </div>
-      )}
-
-      {/* Hint and Word Selection Modal */}
-      {selectedWordIndex === null ? (
-        <div className="space-y-4 rounded-lg border border-dashed bg-muted/30 p-6 text-center">
-          <p className="text-muted-foreground">{t("recorder.selectWordToStart")}</p>
-          <WordModal
-            collection={collection}
-            timestamps={timestamps}
-            selectedWordIndex={selectedWordIndex}
-            selectWord={selectWord}
-          />
-        </div>
-      ) : (
-        <div className="flex justify-center">
-          <WordModal
-            collection={collection}
-            timestamps={timestamps}
-            selectedWordIndex={selectedWordIndex}
-            selectWord={selectWord}
-          />
-        </div>
-      )}
-    </>
-  )
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mic className="size-5" />
-          {t("recorder.cardTitle")}
-        </CardTitle>
-        <CardDescription>{t("recorder.cardDescription")}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Start/Stop Recording */}
-        <div className="flex flex-wrap items-center gap-3">
-          {!isRecording ? (
-            <Button size="lg" onClick={startRecording} disabled={!isSupported || isSaving} className="gap-2">
-              <Mic className="size-5" />
-              {t("recorder.startRecording")}
-            </Button>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 font-mono text-lg">
-                <span className="inline-flex size-3 animate-pulse rounded-full bg-destructive" />
-                {formatDuration(activeDurationMs)}
-              </div>
-              <Button size="lg" variant="destructive" onClick={stopRecording} className="gap-2">
-                <Square className="size-5" />
-                {t("recorder.stopAndSave")}
-              </Button>
-            </>
-          )}
+    <div className="space-y-4">
+      <header className="space-y-4">
+        <Button
+          variant="ghost"
+          onClick={() => (isRecording ? setShowConfirmationDialog(true) : onBack())}
+          className="-ml-2 gap-2"
+        >
+          <ArrowLeft className="size-4" />
+          {t("recordingSession.backToCollections")}
+        </Button>
+        <div className="space-y-2">
+          <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            {t("recordingSession.kicker")}
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">{collection.name}</h1>
         </div>
-        {/* Only show recording controls when recording */}
-        {isRecording && recording}
-      </CardContent>
-    </Card>
+      </header>
+
+      {/* Recording Controls */}
+      {isSupported ? (
+        // Render the WordRecorder component if the browser supports media devices and MediaRecorder API
+        <WordRecorder
+          collection={collection}
+          streamRef={streamRef}
+          mediaRecorderRef={mediaRecorderRef}
+          isRecording={isRecording}
+          setIsRecording={setIsRecording}
+          setRecordings={setRecordings}
+          cleanupStream={cleanupStream}
+        />
+      ) : (
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+          {t("recordingSession.browserNotSupported")}
+        </div>
+      )}
+      {/* Confirmation Dialog for Leaving the Recording Session */}
+      <AlertDialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("recordingSession.leaveRecordingSession")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("recordingSession.leaveDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={onBack}>{t("common.confirm")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }
