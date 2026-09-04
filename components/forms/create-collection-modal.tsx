@@ -45,7 +45,7 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [words, setWords] = useState<Word[]>([])
-  const { t, onError, onSuccess } = useAppLanguage()
+  const { t, onError, onPromise } = useAppLanguage()
 
   // Define the form schema using Zod for validation of the collection creation form.
   const formSchema = z.object({
@@ -162,10 +162,9 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
     }
   }
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const saveCollection = async (data: z.infer<typeof formSchema>) => {
     if (words.length === 0) {
-      onError("validation.uploadCsvFirst")
-      return
+      throw new Error(t("validation.uploadCsvFirst"))
     }
 
     try {
@@ -187,11 +186,18 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
 
       form.reset()
       resetDialogState(false)
-      onSuccess("success.collectionCreated")
     } catch (error) {
-      onError("errors.couldNotCreateCollection", { message: (error as Error).message })
+      throw error
     }
   }
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    return await onPromise(saveCollection(data), {
+      loading: "loading.collectionSaving",
+      success: "success.collectionCreated",
+      error: (error) => ["errors.couldNotCreateCollection", { message: (error as Error).message }],
+    }).unwrap()
+  }
+  
 
   const formatPreview = (words: Word[]) => {
     const previewWords = words.slice(0, 3).map(({ word }) => word)
@@ -204,7 +210,7 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
   }
 
   const isSubmitDisabled = words.length === 0 || form.formState.isSubmitting
-
+  console.log(form.formState.isSubmitting)
   return (
     <Dialog open={isCreateDialogOpen} onOpenChange={resetDialogState}>
       <DialogTrigger asChild>

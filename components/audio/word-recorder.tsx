@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { addRecording, Collection, Recording, Timestamp, updateCollection } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
-import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react"
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
 
 // Preferred MIME types for audio recording in order of preference. The first supported type is used for MediaRecorder.
 const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -21,9 +21,6 @@ const RECORDING_TIMESLICE_MS = 30_000
 
 interface WordRecorderProps {
   collection: Collection
-  streamRef: RefObject<MediaStream | null>
-  mediaRecorderRef: RefObject<MediaRecorder | null>
-  cleanupStream: () => void
   isRecording: boolean
   setIsRecording: (isRecording: boolean) => void
   setRecordings: Dispatch<SetStateAction<Recording[]>>
@@ -34,20 +31,14 @@ interface WordRecorderProps {
  * to marking timestamps for individual texts within the collection, and saves the recordings along with their
  * timestamps.
  */
-export function WordRecorder({
-  collection,
-  streamRef,
-  mediaRecorderRef,
-  cleanupStream,
-  isRecording,
-  setIsRecording,
-  setRecordings,
-}: WordRecorderProps) {
+export function WordRecorder({ collection, isRecording, setIsRecording, setRecordings }: WordRecorderProps) {
+  const streamRef = useRef<MediaStream | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
   const recordingStartRef = useRef<number>(0)
   const timestampsRef = useRef<Map<number, Timestamp[]>>(new Map())
 
-  const { t, onError, onSuccess } = useAppLanguage()
+  const { t, onError, onPromise } = useAppLanguage()
   const [isSaving, setIsSaving] = useState(false)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [timestamps, setTimestamps] = useState<Map<number, Timestamp[]>>(new Map())
@@ -55,6 +46,12 @@ export function WordRecorder({
   const [currentWordStartMs, setCurrentWordStartMs] = useState<number | null>(null)
   const [recordedWord, setRecordedWord] = useState<string>("")
   const [wordEndMarked, setWordEndMarked] = useState(false)
+
+  // Cleanup function to stop all tracks of the media stream and reset the stream reference
+  const cleanupStream = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+  }
 
   // Set to default state when recording stops or is cancelled (when the user navigates back)
   const resetRecordingState = () => {
@@ -105,15 +102,14 @@ export function WordRecorder({
         ...collection,
         wordRecorded: recordedWords,
       }
-
       await Promise.all([addRecording(newRecording), updateCollection(newCollection)])
       setRecordings((prev) => [newRecording, ...prev])
-      onSuccess("success.recordingSaved")
     } catch (error) {
-      onError("errors.couldNotSaveRecording", { message: (error as Error).message })
+      throw error
+    } finally {
+      setIsSaving(false)
+      cleanupStream()
     }
-    setIsSaving(false)
-    cleanupStream()
   }
 
   // Starts recording audio from the user's microphone with the MediaRecorder API
@@ -138,7 +134,13 @@ export function WordRecorder({
       }
 
       // Save the recording when the user stops it
-      mediaRecorder.onstop = saveRecording
+      mediaRecorder.onstop = () => {
+        onPromise(saveRecording, {
+          loading: "loading.recordingSaving",
+          success: "success.recordingSaved",
+          error: (error) => ["errors.couldNotSaveRecording", { message: (error as Error).message }],
+        })
+      }
 
       // Start recording and note the start time to calculate timestamps for marked words.
       recordingStartRef.current = Date.now()
@@ -232,6 +234,16 @@ export function WordRecorder({
     setCurrentWordStartMs(null)
     setWordEndMarked(true)
   }
+
+  // Save the recording when the user navigates away from the page to prevent accidental loss of data.
+  useEffect(() => {
+    if (!isRecording) return
+    
+    return () => {
+      cleanupStream() // Stop the media stream when the component unmounts or recording stops
+      mediaRecorderRef.current?.stop()
+    }
+  }, [isRecording])
 
   // Updates the active recording duration every 50ms while recording, and resets it when recording stops.
   useEffect(() => {

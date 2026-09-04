@@ -30,6 +30,10 @@
     "recordingSaved": "Recording saved successfully.",
     "recordingDeleted": "Recording deleted successfully."
   },
+  "loading": {
+    "recordingSaving": "Saving recording...",
+    "collectionSaving": "Saving collection..."
+  },
   "validation": {
     "enterCollectionName": "Please enter a collection name.",
     "uploadCsvFirst": "Please upload a CSV with words first.",

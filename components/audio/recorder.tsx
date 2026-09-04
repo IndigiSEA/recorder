@@ -24,33 +24,17 @@ interface RecorderProps {
 }
 
 export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
-  const streamRef = useRef<MediaStream | null>(null)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-
   const { t } = useAppLanguage()
   const [isSupported, setIsSupported] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
 
-  // Cleanup function to stop all tracks of the media stream and reset the stream reference
-  const cleanupStream = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    streamRef.current = null
-  }
-
-  // Checks browser support for media devices and MediaRecorder API, loads recordings, and sets up cleanup on unmount
+  // Checks browser support for media devices and MediaRecorder API, and sets up cleanup on unmount
   useEffect(() => {
     setIsSupported(
       typeof window !== "undefined" && "mediaDevices" in navigator && typeof window.MediaRecorder !== "undefined"
     )
-
-    return () => {
-      cleanupStream()
-      if (mediaRecorderRef.current?.state === "recording") {
-        mediaRecorderRef.current.stop()
-      }
-    }
-  }, [collection.id])
+  }, [])
 
   // Detect when the user navigates away from the page to prevent accidental loss of data.
   useEffect(() => {
@@ -91,12 +75,9 @@ export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
         // Render the WordRecorder component if the browser supports media devices and MediaRecorder API
         <WordRecorder
           collection={collection}
-          streamRef={streamRef}
-          mediaRecorderRef={mediaRecorderRef}
           isRecording={isRecording}
           setIsRecording={setIsRecording}
           setRecordings={setRecordings}
-          cleanupStream={cleanupStream}
         />
       ) : (
         <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">

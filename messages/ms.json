@@ -30,6 +30,10 @@
     "recordingSaved": "Rakaman berjaya disimpan.",
     "recordingDeleted": "Rakaman berjaya dipadam."
   },
+  "loading": {
+    "recordingSaving": "Rakaman sedang disimpan...",
+    "collectionSaving": "Koleksi sedang disimpan..."
+  },
   "validation": {
     "enterCollectionName": "Sila masukkan nama koleksi.",
     "uploadCsvFirst": "Sila muat naik CSV dengan perkataan terlebih dahulu.",
