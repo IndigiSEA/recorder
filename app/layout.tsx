@@ -6,7 +6,6 @@ import { ThemeProvider } from "@/providers/theme-provider"
 import type { Metadata, Viewport } from "next"
 import { getLocale } from "next-intl/server"
 import { Geist_Mono, Inter } from "next/font/google"
-import APP_INFO from "./app-info.json"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -15,6 +14,14 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+const APP_INFO = {
+  name: "IndigiSEA Recorder",
+  shortName: "IndigiSEA Recorder",
+  defaultTitle: "IndigiSEA Recorder",
+  titleTemplate: "%s - IndigiSEA Recorder",
+  description: "Recording words from the indigenous community",
+}
 
 // Metadata to show in search results and messaging previews
 export const metadata: Metadata = {
