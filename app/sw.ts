@@ -14,23 +14,12 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-const urlsToPrecache = ["/", "/recorder"] as const;
-
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,
-});
-
-self.addEventListener("install", (event) => {
-  const requestPromises = Promise.all(
-    urlsToPrecache.map((entry) => {
-      return serwist.handleRequest({request: new Request(entry), event});
-    })
-  );
-  event.waitUntil(requestPromises);
 });
 
 serwist.addEventListeners();
