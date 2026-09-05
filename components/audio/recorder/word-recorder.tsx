@@ -1,7 +1,6 @@
 "use client"
 
-import WordModal from "@/components/audio/word-modal"
-import { useTranslations } from "next-intl"
+import WordModal from "@/components/audio/recorder/word-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,6 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { addRecording, Collection, Recording, Timestamp, updateCollection } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -236,11 +236,18 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
     setWordEndMarked(true)
   }
 
-  // Save the recording when the user navigates away from the page to prevent accidental loss of data.
+  // Detects when the user navigates away from the page and save the recording to prevent accidental loss of data.
   useEffect(() => {
     if (!isRecording) return
-    
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = true // Included for legacy support, e.g. Chrome/Edge < 119
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
     return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
       cleanupStream() // Stop the media stream when the component unmounts or recording stops
       mediaRecorderRef.current?.stop()
     }

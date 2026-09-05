@@ -1,11 +1,10 @@
 "use client"
 
-import { NextIntlClientProvider } from "next-intl"
-import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { NextIntlClientProvider, useTranslations } from "next-intl"
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react"
+import messages from "../messages/en.d.json"
 import enMessages from "../messages/en.json"
 import msMessages from "../messages/ms.json"
-import messages from "../messages/en.d.json"
-import { useTranslations } from "next-intl"
 
 export type Translator = ReturnType<typeof useTranslations<never>>
 
@@ -47,25 +46,23 @@ function getMessages(locale: SupportedLocale) {
  */
 export function I18nProvider({ children, initialLocale }: { children: ReactNode; initialLocale: SupportedLocale }) {
   const [locale, setLocale] = useState<SupportedLocale>(initialLocale)
-  const hasInitialised = useRef(false)
 
   useEffect(() => {
     // Set the initial locale from localStorage only once on mount.
-    if (hasInitialised.current) return
-    hasInitialised.current = true
     setLocale(readPreferredLocale(initialLocale))
   }, [initialLocale])
 
-  useEffect(() => {
-    // Update localStorage whenever the locale changes.
+  const updateLocale = (newLocale: SupportedLocale) => {
+    setLocale(newLocale)
+
     try {
-      localStorage.setItem("locale", locale)
+      localStorage.setItem("locale", newLocale)
     } catch (e) {
       console.error("Failed to set preferred locale in localStorage", e)
     }
-  }, [locale])
+  }
 
-  const value = useMemo(() => ({ locale, setLocale }), [locale])
+  const value = useMemo(() => ({ locale, setLocale: updateLocale }), [locale])
 
   return (
     <LocaleContext.Provider value={value}>

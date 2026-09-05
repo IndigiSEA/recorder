@@ -1,5 +1,6 @@
 "use client"
 
+import { WordRecorder } from "@/components/audio/recorder/word-recorder"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,44 +13,36 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Collection, Recording } from "@/lib/db"
+import { useCollection } from "@/providers/collection-provider"
 import { ArrowLeft } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { Dispatch, SetStateAction, useEffect, useState } from "react"
-import { WordRecorder } from "./word-recorder"
+import { useRouter } from "next/navigation"
+import { Dispatch, SetStateAction, useState } from "react"
 
 interface RecorderProps {
   collection: Collection
   setRecordings: Dispatch<SetStateAction<Recording[]>>
-  onBack: () => void
 }
 
-export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
+export function Recorder({ collection, setRecordings }: RecorderProps) {
   const t = useTranslations()
-  const [isSupported, setIsSupported] = useState(false)
+  const router = useRouter()
   const [isRecording, setIsRecording] = useState(false)
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
+  const { setSelectedCollection, setCollections } = useCollection()
+
+  const onBack = () => {
+    setCollections((prevCollections) =>
+      // Update the selected collection in collections
+      prevCollections.map((item) => (item.id === collection.id ? collection : item))
+    )
+    setSelectedCollection(null)
+    router.back()
+  }
 
   // Checks browser support for media devices and MediaRecorder API, and sets up cleanup on unmount
-  useEffect(() => {
-    setIsSupported(
-      typeof window !== "undefined" && "mediaDevices" in navigator && typeof window.MediaRecorder !== "undefined"
-    )
-  }, [])
-
-  // Detect when the user navigates away from the page to prevent accidental loss of data.
-  useEffect(() => {
-    if (!isRecording) return
-
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = true // Included for legacy support, e.g. Chrome/Edge < 119
-    }
-
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload)
-    }
-  }, [isRecording])
+  const isSupported =
+    typeof window !== "undefined" && "mediaDevices" in navigator && typeof window.MediaRecorder !== "undefined"
 
   return (
     <div className="space-y-4">

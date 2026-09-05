@@ -1,6 +1,6 @@
 "use client"
 
-import PlaybackModal from "@/components/audio/playback-modal"
+import PlaybackModal from "@/components/audio/player/playback-modal"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +25,6 @@ interface PlayerProps {
   recordings: Recording[]
   collection: Collection
   setRecordings: (recordings: Recording[]) => void
-  setSelectedCollection: (collection: Collection) => void
 }
 
 /**
@@ -126,11 +125,11 @@ function RecordingItem({
  * Player component shows the recordings for a specific collection of texts. It allows users to play, download audio
  * files, export metadata and delete recordings.
  */
-export function Player({ recordings, collection, setRecordings, setSelectedCollection }: PlayerProps) {
+export function Player({ recordings, collection, setRecordings }: PlayerProps) {
   const t = useTranslations()
+  const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null)
   const [recordingUrls, setRecordingUrls] = useState<Map<string, string>>(new Map())
   const [metadataUrls, setMetadataUrls] = useState<Map<string, string>>(new Map())
-  const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null)
   const [isPlaybackModalOpen, setPlaybackModalOpen] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
@@ -138,24 +137,29 @@ export function Player({ recordings, collection, setRecordings, setSelectedColle
   useEffect(() => {
     const nextUrls = new Map<string, string>()
     const nextMetadata = new Map<string, string>()
-    for (const recording of recordings) {
-      // Create URLs for the recording blob and the serialised JSON metadata
-      const metadata = {
-        createdAt: recording.createdAt.toISOString(),
-        durationMs: recording.durationMs,
-        timestamps: recording.timestamps,
-        participants: collection.participants || [],
-        interviewers: collection.interviewers || [],
-        assistants: collection.assistants || [],
+
+    const generateUrls = () => {
+      for (const recording of recordings) {
+        // Create URLs for the recording blob and the serialised JSON metadata
+        const metadata = {
+          createdAt: recording.createdAt.toISOString(),
+          durationMs: recording.durationMs,
+          timestamps: recording.timestamps,
+          participants: collection.participants || [],
+          interviewers: collection.interviewers || [],
+          assistants: collection.assistants || [],
+        }
+        nextUrls.set(recording.id, URL.createObjectURL(recording.blob))
+        nextMetadata.set(
+          recording.id,
+          URL.createObjectURL(new Blob([JSON.stringify(metadata)], { type: "application/json" }))
+        )
       }
-      nextUrls.set(recording.id, URL.createObjectURL(recording.blob))
-      nextMetadata.set(
-        recording.id,
-        URL.createObjectURL(new Blob([JSON.stringify(metadata)], { type: "application/json" }))
-      )
+      setRecordingUrls(nextUrls)
+      setMetadataUrls(nextMetadata)
     }
-    setRecordingUrls(nextUrls)
-    setMetadataUrls(nextMetadata)
+
+    generateUrls()
 
     return () => {
       // Revoke object URLs when the component unmounts or recordings change
@@ -166,7 +170,7 @@ export function Player({ recordings, collection, setRecordings, setSelectedColle
         URL.revokeObjectURL(url)
       }
     }
-  }, [recordings])
+  }, [recordings, collection])
 
   // Remove a recording from the local database and update the collection's wordRecorded state with the remaining recordings.
   const deleteRecording = async (id: string) => {
@@ -199,7 +203,6 @@ export function Player({ recordings, collection, setRecordings, setSelectedColle
         wordRecorded: newWordRecorded,
       }
       await updateCollection(newCollection)
-      setSelectedCollection(newCollection)
 
       // Update the recordings state and clear the selected recording if it was deleted
       setRecordings(remainingRecordings)

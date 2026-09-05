@@ -1,5 +1,6 @@
 "use client"
 
+import { useAppLocale } from "@/providers/i18n-provider"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -10,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useAppLocale } from "@/components/i18n-provider"
 import { Check, Languages, Monitor, Moon, Settings, Sun } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
@@ -67,7 +67,7 @@ export function SettingsDropdown() {
             {t("settings.language")}
           </DropdownMenuLabel>
           {languages.map(([code, name]) => (
-              <DropdownMenuItem key={code} onClick={() => setLocale(code)} className="gap-2">
+            <DropdownMenuItem key={code} onClick={() => setLocale(code)} className="gap-2">
               <Languages className="size-4" />
               {name}
               {locale === code && <Check className="ml-auto size-4" />}

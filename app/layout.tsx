@@ -1,7 +1,8 @@
-import { I18nProvider } from "@/components/i18n-provider"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
+import { CollectionProvider } from "@/providers/collection-provider"
+import { I18nProvider } from "@/providers/i18n-provider"
+import { ThemeProvider } from "@/providers/theme-provider"
 import type { Metadata, Viewport } from "next"
 import { getLocale } from "next-intl/server"
 import { Geist_Mono, Inter } from "next/font/google"
@@ -77,9 +78,11 @@ export default async function RootLayout({
     >
       <body className="h-full overflow-hidden">
         <div className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
-          <ThemeProvider>
-            <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
-          </ThemeProvider>
+          <CollectionProvider>
+            <ThemeProvider>
+              <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
+            </ThemeProvider>
+          </CollectionProvider>
         </div>
         <Toaster />
       </body>

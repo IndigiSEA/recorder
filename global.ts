@@ -1,4 +1,4 @@
-import { SupportedLocale } from "@/components/i18n-provider"
+import { SupportedLocale } from "@/providers/i18n-provider"
 import formats from "@/i18n/request"
 import messages from "@/messages/en.d.json"
 

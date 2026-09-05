@@ -1,6 +1,4 @@
-"use client"
-
-import { Translator } from "@/components/i18n-provider"
+import { Translator } from "@/providers/i18n-provider"
 import { parse, ParseResult } from "papaparse"
 import { toast } from "sonner"
 

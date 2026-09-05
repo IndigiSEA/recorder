@@ -1,7 +1,6 @@
 "use client"
 
-import { CollectionRecorder } from "@/components/audio/collection-recorder"
-import { CreateCollectionDialog } from "@/components/forms/create-collection-modal"
+import { CreateCollectionDialog } from "@/components/collection/create-collection-modal"
 import { SettingsDropdown } from "@/components/settings-dropdown"
 import {
   AlertDialog,
@@ -17,8 +16,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collection, getCollections, removeCollection } from "@/lib/db"
+import { useCollection } from "@/providers/collection-provider"
 import { FolderOpen, Mic, Trash2, Upload } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -90,20 +91,9 @@ function CollectionCard({
 export default function Page() {
   // Hook to show text, error, and success messages in the user's selected language
   const t = useTranslations()
-  const [collections, setCollections] = useState<Collection[]>([])
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
-  const [loading, setLoading] = useState(false)
+  const { setSelectedCollection, collections, setCollections } = useCollection()
+  const router = useRouter()
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null)
-
-  // Loads the user's collections from the local database
-  const loadCollections = async () => {
-    try {
-      const collections = await getCollections()
-      setCollections(collections)
-    } catch (error) {
-      toast.error(t("errors.couldNotLoadCollections", { message: (error as Error).message }))
-    }
-  }
 
   // Deletes a collection from the local database and updates the user's collections
   const deleteCollection = async (id: string) => {
@@ -115,32 +105,21 @@ export default function Page() {
     }
   }
 
-  // Load the user's collections when the component mounts
+  // Load the user's collections from the local database when the component mounts
   useEffect(() => {
-    setLoading(true)
+    // Loads the user's collections
+    const loadCollections = async () => {
+      try {
+        const collections = await getCollections()
+        setCollections(collections)
+      } catch (error) {
+        toast.error(t("errors.couldNotLoadCollections", { message: (error as Error).message }))
+      }
+    }
     loadCollections()
-  }, [])
+  }, [setCollections, t])
 
-  // Show the CollectionRecorder component if a collection is selected
-  if (selectedCollection) {
-    return (
-      <CollectionRecorder
-        collection={selectedCollection}
-        setSelectedCollection={setSelectedCollection}
-        onBack={() => {
-          setCollections((prevCollections) =>
-            // Update the selected collection in collections
-            prevCollections.map((collection) =>
-              collection.id === selectedCollection.id ? selectedCollection : collection
-            )
-          )
-          setSelectedCollection(null)
-        }}
-      />
-    )
-  }
-
-  // Otherwise, show the main view with the user's collections and options to create or delete collections
+  // Show the main view with the user's collections and options to create or delete collections
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-4xl flex-col gap-6 bg-background px-4 py-8">
       <header className="space-y-2">
@@ -175,7 +154,10 @@ export default function Page() {
               <CollectionCard
                 key={collection.id}
                 collection={collection}
-                onOpen={() => setSelectedCollection(collection)}
+                onOpen={() => {
+                  setSelectedCollection(collection)
+                  router.push(`/recorder/`)
+                }}
                 onDelete={() => setCollectionToDelete(collection)}
               />
             ))}
