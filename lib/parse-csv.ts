@@ -1,4 +1,8 @@
+"use client"
+
+import { Translator } from "@/components/i18n-provider"
 import { parse, ParseResult } from "papaparse"
+import { toast } from "sonner"
 
 /**
  * Word interface representing a single word/sentence entry in the CSV file. It includes:
@@ -36,13 +40,13 @@ export type CollectionTypeValue = (typeof collectionTypes)[number]["value"]
  * @param file The CSV file to be parsed.
  * @param collectionType The type of collection being created, either "transcript" or "audio".
  * @param setWords A callback function to set the parsed texts (words/sentences) into state.
- * @param onError A callback function to handle error messages, which can be used to display the error to the user.
+ * @param t The translation function from next-intl to handle error messages.
  */
 function updateResult(
   file: File,
   collectionType: CollectionTypeValue,
   setWords: (words: Word[]) => void,
-  onError: (key: string, values?: Record<string, string>) => void
+  t: Translator
 ) {
   // Parses a single row of the CSV file into a Word object for transcript collections, which includes an id in the
   // first column and a word in the second column.
@@ -67,7 +71,7 @@ function updateResult(
     if (results.errors.length > 0) {
       // Display the parsing errors
       const errors = results.errors.map((e) => e.message).join(", ")
-      onError("csv.errorParsing", { fileName: file.name, errors })
+      toast.error(t("csv.errorParsing", { fileName: file.name, errors }))
       return
     }
 
@@ -78,7 +82,7 @@ function updateResult(
 
       if (data.length === 0) {
         // Show an error message if data is empty
-        onError("csv.emptyFile", { fileName: file.name })
+        toast.error(t("csv.emptyFile", { fileName: file.name }))
         return
       }
 
@@ -90,7 +94,7 @@ function updateResult(
         // Check if the audio collection has at least 3 columns (id, word, translatedWord) and parse the valid rows
         // into Word objects.
         if (headers.length < 3) {
-          onError("csv.needs3ColumnsAudio", { fileName: file.name })
+          toast.error(t("csv.needs3ColumnsAudio", { fileName: file.name }))
           return
         }
         const words = validRows.map(parseAudioRow)
@@ -99,7 +103,7 @@ function updateResult(
         // Check if the transcript collection has at least 2 columns (id, word) and parse the valid rows into
         // Word objects.
         if (headers.length < 2) {
-          onError("csv.needs2ColumnsTranscript", { fileName: file.name })
+          toast.error(t("csv.needs2ColumnsTranscript", { fileName: file.name }))
           return
         }
         const words = validRows.map(parseTranscriptRow)
@@ -108,7 +112,7 @@ function updateResult(
     } catch (error) {
       // Handle any unexpected errors that may occur during parsing and display an error message to the user.
       const message = (error as Error).message
-      onError("csv.unexpectedError", { fileName: file.name, message })
+      toast.error(t("csv.unexpectedError", { fileName: file.name, message }))
       return
     }
   }
@@ -121,19 +125,19 @@ function updateResult(
  * @param file The CSV file to be parsed.
  * @param collectionType The type of collection being created, either "transcript" or "audio".
  * @param setWords A callback function to set the parsed texts (words/sentences) into state.
- * @param onError A callback function to handle error messages, which can be used to display the error to the user.
+ * @param t The translation function from next-intl to handle error messages
  */
 export function parseCSVFile(
   file: File,
   collectionType: CollectionTypeValue,
   setWords: (words: Word[]) => void,
-  onError: (key: string, values?: Record<string, string>) => void
+  t: Translator
 ) {
   // Fix the delimiter to a comma and auto-detect the newline character, headers as false to return the raw data as a 2D
   // array, and use the updateResult function to handle the parsed results and errors.
   parse(file, {
     delimiter: ",",
     header: false,
-    complete: updateResult(file, collectionType, setWords, onError),
+    complete: updateResult(file, collectionType, setWords, t),
   })
 }

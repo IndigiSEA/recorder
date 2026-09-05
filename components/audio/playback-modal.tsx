@@ -1,7 +1,7 @@
-import { useAppLanguage } from "@/components/language-provider"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Recording } from "@/lib/db"
 import { formatBytes, formatDuration } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 import { useRef, useState } from "react"
 
 /**
@@ -20,10 +20,8 @@ export default function PlaybackModal({
   isPlaybackModalOpen: boolean
   onClose: () => void
 }) {
-  const { t } = useAppLanguage()
-
+  const t = useTranslations()
   const audioRef = useRef<HTMLAudioElement | null>(null)
-
   const [isPlaying, setIsPlaying] = useState(false)
   const [playbackTime, setPlaybackTime] = useState(0)
 
@@ -69,7 +67,7 @@ export default function PlaybackModal({
     t("recordings.summaryLine", {
       duration: formatDuration(playbackRecording.durationMs),
       size: formatBytes(playbackRecording.size),
-      count: new Set(playbackRecording.timestamps.map((t) => t.wordId)).size,
+      count: new Set(playbackRecording.timestamps.map((t) => t.wordId)).size.toString(),
     })
 
   return (

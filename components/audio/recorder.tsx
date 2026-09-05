@@ -1,6 +1,5 @@
 "use client"
 
-import { useAppLanguage } from "@/components/language-provider"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Collection, Recording } from "@/lib/db"
 import { ArrowLeft } from "lucide-react"
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
 import { WordRecorder } from "./word-recorder"
 
 interface RecorderProps {
@@ -24,7 +24,7 @@ interface RecorderProps {
 }
 
 export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
-  const { t } = useAppLanguage()
+  const t = useTranslations()
   const [isSupported, setIsSupported] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)

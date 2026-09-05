@@ -3,9 +3,10 @@
 import { CollectionDetails } from "@/components/audio/collection-details"
 import { Player } from "@/components/audio/player"
 import { Recorder } from "@/components/audio/recorder"
-import { useAppLanguage } from "@/components/language-provider"
 import { Collection, Recording, getRecordings } from "@/lib/db"
+import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface CollectionRecorderProps {
   collection: Collection
@@ -18,7 +19,7 @@ interface CollectionRecorderProps {
  * recording controls and displays saved recordings for playback.
  */
 export function CollectionRecorder({ collection, setSelectedCollection, onBack }: CollectionRecorderProps) {
-  const { onError } = useAppLanguage()
+  const t = useTranslations()
   const [recordings, setRecordings] = useState<Recording[]>([])
 
   // Load recordings for the current collection from the local database
@@ -27,7 +28,7 @@ export function CollectionRecorder({ collection, setSelectedCollection, onBack }
       const recordings = await getRecordings(collection.id)
       setRecordings(recordings)
     } catch (error) {
-      onError("errors.couldNotLoadRecordings", { message: (error as Error).message })
+      toast.error(t("errors.couldNotLoadRecordings", { message: (error as Error).message }))
     }
   }
 

@@ -2,12 +2,15 @@
 
 import { NextIntlClientProvider } from "next-intl"
 import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react"
+import enMessages from "../messages/en.json"
+import msMessages from "../messages/ms.json"
+import messages from "../messages/en.d.json"
+import { useTranslations } from "next-intl"
 
-import enMessages from "@/messages/en.json"
-import msMessages from "@/messages/ms.json"
-import { LanguageProvider } from "./language-provider"
+export type Translator = ReturnType<typeof useTranslations<never>>
 
 const supportedLocales = ["en", "ms"] as const
+
 export type SupportedLocale = (typeof supportedLocales)[number]
 
 type LocaleContextValue = {
@@ -18,8 +21,8 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 // Check if a given value is a supported locale.
-function isSupportedLocale(value: unknown): value is SupportedLocale {
-  return supportedLocales.includes(value as SupportedLocale)
+function isSupportedLocale(value: string | null): value is SupportedLocale {
+  return !!value && (supportedLocales as readonly string[]).includes(value)
 }
 
 // Read the preferred locale from localStorage, falling back to a default if not found or invalid.
@@ -36,7 +39,7 @@ function readPreferredLocale(fallback: SupportedLocale): SupportedLocale {
 
 // Get the appropriate messages for the given locale.
 function getMessages(locale: SupportedLocale) {
-  return locale === "ms" ? msMessages : enMessages
+  return (locale === "ms" ? msMessages : enMessages) as typeof messages // Use the messages type for type safety
 }
 
 /**
@@ -67,7 +70,7 @@ export function I18nProvider({ children, initialLocale }: { children: ReactNode;
   return (
     <LocaleContext.Provider value={value}>
       <NextIntlClientProvider locale={locale} messages={getMessages(locale)} timeZone="Asia/Kuala_Lumpur">
-        <LanguageProvider>{children}</LanguageProvider>
+        {children}
       </NextIntlClientProvider>
     </LocaleContext.Provider>
   )

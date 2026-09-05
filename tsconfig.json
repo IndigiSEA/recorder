@@ -21,7 +21,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "allowArbitraryExtensions": true
   },
   "include": [
     "next-env.d.ts",

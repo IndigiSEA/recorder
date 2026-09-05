@@ -32,7 +32,9 @@
   },
   "loading": {
     "recordingSaving": "Rakaman sedang disimpan...",
-    "collectionSaving": "Koleksi sedang disimpan..."
+    "recordingDeleting": "Rakaman sedang dipadam...",
+    "collectionSaving": "Koleksi sedang disimpan...",
+    "collectionDeleting": "Koleksi sedang dipadam..."
   },
   "validation": {
     "enterCollectionName": "Sila masukkan nama koleksi.",

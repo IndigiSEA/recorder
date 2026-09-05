@@ -1,7 +1,7 @@
 "use client"
 
 import WordModal from "@/components/audio/word-modal"
-import { useAppLanguage } from "@/components/language-provider"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { addRecording, Collection, Recording, Timestamp, updateCollection } from
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 // Preferred MIME types for audio recording in order of preference. The first supported type is used for MediaRecorder.
 const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -38,7 +39,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
   const recordingStartRef = useRef<number>(0)
   const timestampsRef = useRef<Map<number, Timestamp[]>>(new Map())
 
-  const { t, onError, onPromise } = useAppLanguage()
+  const t = useTranslations()
   const [isSaving, setIsSaving] = useState(false)
   const [activeDurationMs, setActiveDurationMs] = useState(0)
   const [timestamps, setTimestamps] = useState<Map<number, Timestamp[]>>(new Map())
@@ -135,10 +136,10 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
 
       // Save the recording when the user stops it
       mediaRecorder.onstop = () => {
-        onPromise(saveRecording, {
-          loading: "loading.recordingSaving",
-          success: "success.recordingSaved",
-          error: (error) => ["errors.couldNotSaveRecording", { message: (error as Error).message }],
+        toast.promise(saveRecording, {
+          loading: t("loading.recordingSaving"),
+          success: t("success.recordingSaved"),
+          error: (error) => t("errors.couldNotSaveRecording", { message: (error as Error).message }),
         })
       }
 
@@ -148,7 +149,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
       setIsRecording(true)
     } catch (error) {
       cleanupStream()
-      onError("errors.micDeniedOrUnavailable", { message: (error as Error).message })
+      toast.error(t("errors.micDeniedOrUnavailable", { message: (error as Error).message }))
     }
   }
 
@@ -200,7 +201,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
     if (!isRecording || selectedWordIndex === null || currentWordStartMs === null) return
 
     if (recordedWord.trim() === "" && !collection.translatedWords) {
-      onError("validation.enterWordBeforeEndTime")
+      toast.error(t("validation.enterWordBeforeEndTime"))
       return
     }
 
@@ -338,7 +339,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">{t("common.progress")}</span>
           <span className="font-medium">
-            {t("recorder.progressCount", { marked: markedCount, total: collection.words.length })}
+            {t("recorder.progressCount", { marked: markedCount.toString(), total: collection.words.length.toString() })}
           </span>
         </div>
         <Progress value={progress} />

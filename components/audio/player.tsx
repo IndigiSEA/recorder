@@ -1,7 +1,6 @@
 "use client"
 
 import PlaybackModal from "@/components/audio/playback-modal"
-import { useAppLanguage } from "@/components/language-provider"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +17,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collection, Recording, removeRecording, updateCollection } from "@/lib/db"
 import { extensionFor, formatBytes, formatDuration } from "@/lib/utils"
 import { Download, FileJson, Mic, MoreVertical, Play, Trash2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface PlayerProps {
   recordings: Recording[]
@@ -46,7 +47,7 @@ function RecordingItem({
   recordingUrls: Map<string, string>
   metadataUrls: Map<string, string>
 }) {
-  const { t } = useAppLanguage()
+  const t = useTranslations()
   // Get download links for recording and metadata from the provided maps.
   const recordingUrl = recordingUrls.get(recording.id)
   const metadataUrl = metadataUrls.get(recording.id)
@@ -71,7 +72,7 @@ function RecordingItem({
   // Duration, size, and number of unique words in the recording
   const duration = formatDuration(recording.durationMs)
   const size = formatBytes(recording.size)
-  const count = new Set(recording.timestamps.map((t) => t.wordId)).size // Count of unique word IDs
+  const count = new Set(recording.timestamps.map((t) => t.wordId)).size.toString() // Count of unique word IDs
 
   return (
     <Card key={recording.id}>
@@ -126,7 +127,7 @@ function RecordingItem({
  * files, export metadata and delete recordings.
  */
 export function Player({ recordings, collection, setRecordings, setSelectedCollection }: PlayerProps) {
-  const { t, onError, onSuccess } = useAppLanguage()
+  const t = useTranslations()
   const [recordingUrls, setRecordingUrls] = useState<Map<string, string>>(new Map())
   const [metadataUrls, setMetadataUrls] = useState<Map<string, string>>(new Map())
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null)
@@ -205,9 +206,8 @@ export function Player({ recordings, collection, setRecordings, setSelectedColle
       if (selectedRecording?.id === id) {
         setSelectedRecording(null)
       }
-      onSuccess("success.recordingDeleted")
     } catch (error) {
-      onError("errors.couldNotDeleteRecording", { message: (error as Error).message })
+      throw error
     }
   }
 
@@ -264,7 +264,11 @@ export function Player({ recordings, collection, setRecordings, setSelectedColle
             <AlertDialogAction
               onClick={() => {
                 if (deleteConfirmId) {
-                  deleteRecording(deleteConfirmId)
+                  toast.promise(deleteRecording(deleteConfirmId), {
+                    loading: t("loading.recordingDeleting"),
+                    success: t("success.recordingDeleted"),
+                    error: (error) => t("errors.couldNotDeleteRecording", { message: (error as Error).message }),
+                  })
                   setDeleteConfirmId(null)
                 }
               }}

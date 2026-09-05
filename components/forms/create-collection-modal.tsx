@@ -1,6 +1,6 @@
 "use client"
 
-import { useAppLanguage } from "@/components/language-provider"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -33,6 +33,7 @@ import { CirclePlus, FileSpreadsheet, Plus, Trash2, Upload, XIcon } from "lucide
 import { Dispatch, SetStateAction, useState } from "react"
 import { Controller, useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
+import { toast } from "sonner"
 
 /**
  * Dialog for creating a new collection. The user inputs a collection name, enters the name of participants,
@@ -45,7 +46,7 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [words, setWords] = useState<Word[]>([])
-  const { t, onError, onPromise } = useAppLanguage()
+  const t = useTranslations()
 
   // Define the form schema using Zod for validation of the collection creation form.
   const formSchema = z.object({
@@ -151,14 +152,14 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
     }
 
     setFile(selectedFile)
-    parseCSVFile(selectedFile, form.getValues("collectionType"), setWords, onError)
+    parseCSVFile(selectedFile, form.getValues("collectionType"), setWords, t)
   }
 
   const setCollectionType = (value: CollectionTypeValue) => {
     form.setValue("collectionType", value)
     setWords([])
     if (file) {
-      parseCSVFile(file, value, setWords, onError)
+      parseCSVFile(file, value, setWords, t)
     }
   }
 
@@ -191,10 +192,10 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
     }
   }
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    return await onPromise(saveCollection(data), {
-      loading: "loading.collectionSaving",
-      success: "success.collectionCreated",
-      error: (error) => ["errors.couldNotCreateCollection", { message: (error as Error).message }],
+    return await toast.promise(saveCollection(data), {
+      loading: t("loading.collectionSaving"),
+      success: t("success.collectionCreated"),
+      error: (error) => t("errors.couldNotCreateCollection", { message: (error as Error).message }),
     }).unwrap()
   }
   
@@ -206,7 +207,7 @@ export function CreateCollectionDialog({ setCollections }: { setCollections: Dis
       return sentenceWords.length > 3 ? sentenceWords.slice(0, 3).join(" ") + "..." : sentence
     })
     const preview = previewSentences.join(", ") + (words.length > 3 ? ", ..." : "")
-    return t("home.previewWordsLoaded", { count: words.length, preview })
+    return t("home.previewWordsLoaded", { count: words.length.toString(), preview })
   }
 
   const isSubmitDisabled = words.length === 0 || form.formState.isSubmitting

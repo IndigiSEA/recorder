@@ -2,7 +2,6 @@
 
 import { CollectionRecorder } from "@/components/audio/collection-recorder"
 import { CreateCollectionDialog } from "@/components/forms/create-collection-modal"
-import { useAppLanguage } from "@/components/language-provider"
 import { SettingsDropdown } from "@/components/settings-dropdown"
 import {
   AlertDialog,
@@ -19,7 +18,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collection, getCollections, removeCollection } from "@/lib/db"
 import { FolderOpen, Mic, Trash2, Upload } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 /**
  * Shows the card for a single collection with options to open or delete it.
@@ -38,7 +39,7 @@ function CollectionCard({
   onOpen: () => void
   onDelete: () => void
 }) {
-  const { t } = useAppLanguage()
+  const t = useTranslations()
   return (
     <Card key={collection.id} className="group relative gap-2">
       <CardHeader>
@@ -60,7 +61,7 @@ function CollectionCard({
         </div>
       </CardHeader>
       <CardContent className="mb-1">
-        <p>{t("home.collectionCardWordCount", { count: collection.words.length })}</p>
+        <p>{t("home.collectionCardWordCount", { count: collection.words.length.toString() })}</p>
         <p className="line-clamp-2 truncate text-sm text-muted-foreground">
           {collection.words.slice(0, 3).join(", ")}
           {collection.words.length > 3 && "..."}
@@ -88,7 +89,7 @@ function CollectionCard({
  **/
 export default function Page() {
   // Hook to show text, error, and success messages in the user's selected language
-  const { t, onError, onSuccess } = useAppLanguage()
+  const t = useTranslations()
   const [collections, setCollections] = useState<Collection[]>([])
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [loading, setLoading] = useState(false)
@@ -100,7 +101,7 @@ export default function Page() {
       const collections = await getCollections()
       setCollections(collections)
     } catch (error) {
-      onError("errors.couldNotLoadCollections", { message: (error as Error).message })
+      toast.error(t("errors.couldNotLoadCollections", { message: (error as Error).message }))
     }
   }
 
@@ -109,9 +110,8 @@ export default function Page() {
     try {
       await removeCollection(id)
       setCollections((prevCollections) => prevCollections.filter((collection) => collection.id !== id))
-      onSuccess("success.collectionDeleted")
     } catch (error) {
-      onError("errors.couldNotDeleteCollection", { message: (error as Error).message })
+      throw error
     }
   }
 
@@ -193,7 +193,11 @@ export default function Page() {
             <AlertDialogAction
               onClick={() => {
                 if (collectionToDelete) {
-                  deleteCollection(collectionToDelete.id)
+                  toast.promise(deleteCollection(collectionToDelete.id), {
+                    loading: t("loading.collectionDeleting"),
+                    success: t("success.collectionDeleted"),
+                    error: (error) => t("errors.couldNotDeleteCollection", { message: (error as Error).message }),
+                  })
                 }
                 setCollectionToDelete(null)
               }}

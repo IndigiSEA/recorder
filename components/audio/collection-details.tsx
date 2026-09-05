@@ -1,10 +1,10 @@
-import { useAppLanguage } from "@/components/language-provider"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Collection } from "@/lib/db"
+import { useTranslations } from "next-intl"
 
 export function CollectionDetails({ collection }: { collection: Collection }) {
-  const { t } = useAppLanguage()
+  const t = useTranslations()
 
   const formatList = (items?: string[]) => (items && items.length > 0 ? items.join(", ") : "—")
 

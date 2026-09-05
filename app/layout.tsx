@@ -68,16 +68,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getLocale()
-  const initialLocale = locale === "ms" ? "ms" : "en"
-
+  const initialLocale = await getLocale()
   return (
     <html
-      lang="en"
+      lang={initialLocale}
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "overflow-hidden")}
+      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, "h-full overflow-hidden")}
     >
-      <body className="fixed inset-0 overflow-hidden">
+      <body className="h-full overflow-hidden">
         <div className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
           <ThemeProvider>
             <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
