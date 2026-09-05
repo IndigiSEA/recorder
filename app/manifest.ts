@@ -23,13 +23,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
-      },
-      {
-        src: "/icons/logo-192x192.png",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "maskable",
-      },
+      }
     ],
     start_url: "/",
     display: isAppleDevice ? "browser" : "standalone",
