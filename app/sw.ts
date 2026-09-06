@@ -22,4 +22,21 @@ const serwist = new Serwist({
   runtimeCaching: defaultCache,
 })
 
+const urlsToCache = ["/"] as const
+
+// Cache the URLs ahead of time when the service worker is installed for immediate offline availability.
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    Promise.allSettled(
+      urlsToCache.map((entry) => {
+        const request = serwist.handleRequest({
+          request: new Request(entry),
+          event,
+        })
+        return request
+      })
+    )
+  )
+})
+
 serwist.addEventListeners()

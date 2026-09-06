@@ -13,32 +13,20 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Collection, Recording } from "@/lib/db"
-import { useCollection } from "@/providers/collection-provider"
 import { ArrowLeft } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useRouter } from "next/navigation"
 import { Dispatch, SetStateAction, useState } from "react"
 
 interface RecorderProps {
   collection: Collection
   setRecordings: Dispatch<SetStateAction<Recording[]>>
+  onBack: (collection: Collection) => void
 }
 
-export function Recorder({ collection, setRecordings }: RecorderProps) {
+export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
   const t = useTranslations()
-  const router = useRouter()
   const [isRecording, setIsRecording] = useState(false)
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
-  const { setSelectedCollection, setCollections } = useCollection()
-
-  const onBack = () => {
-    setCollections((prevCollections) =>
-      // Update the selected collection in collections
-      prevCollections.map((item) => (item.id === collection.id ? collection : item))
-    )
-    setSelectedCollection(null)
-    router.back()
-  }
 
   // Checks browser support for media devices and MediaRecorder API, and sets up cleanup on unmount
   const isSupported =
@@ -49,8 +37,14 @@ export function Recorder({ collection, setRecordings }: RecorderProps) {
       <header className="space-y-4">
         <Button
           variant="ghost"
-          onClick={() => (isRecording ? setShowConfirmationDialog(true) : onBack())}
           className="-ml-2 gap-2"
+          onClick={() => {
+            if (isRecording) {
+              setShowConfirmationDialog(true)
+            } else {
+              onBack(collection)
+            }
+          }}
         >
           <ArrowLeft className="size-4" />
           {t("recordingSession.backToCollections")}
@@ -86,7 +80,7 @@ export function Recorder({ collection, setRecordings }: RecorderProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={onBack}>{t("common.confirm")}</AlertDialogAction>
+            <AlertDialogAction onClick={() => onBack(collection)}>{t("common.confirm")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

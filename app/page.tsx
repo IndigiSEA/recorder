@@ -1,5 +1,6 @@
 "use client"
 
+import CollectionRecorder from "@/components/audio/collection-recorder"
 import { CreateCollectionDialog } from "@/components/collection/create-collection-modal"
 import { SettingsDropdown } from "@/components/settings-dropdown"
 import {
@@ -16,11 +17,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collection, getCollections, removeCollection } from "@/lib/db"
-import { useCollection } from "@/providers/collection-provider"
 import { FolderOpen, Mic, Trash2, Upload } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 /**
@@ -81,18 +81,14 @@ function CollectionCard({
   )
 }
 
-/**
- * Home page of the Single Page Application (SPA) which switches between views based on the state of the application.
- *
- * - The main view displays the user's collections with options to create new collections or delete existing ones.
- * - When a collection is selected, the view switches to the CollectionRecorder component to record words and manage
- * recordings for the selected collection.
- **/
-export default function Page() {
+function HomeView() {
+  const searchParams = useSearchParams()
+  const view = searchParams.get("view")
+
   // Hook to show text, error, and success messages in the user's selected language
   const t = useTranslations()
-  const { setSelectedCollection, collections, setCollections } = useCollection()
-  const router = useRouter()
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null)
 
   // Deletes a collection from the local database and updates the user's collections
@@ -103,6 +99,14 @@ export default function Page() {
     } catch (error) {
       throw error
     }
+  }
+
+  // Handles the back navigation from the CollectionRecorder view to the main view, updating the collections state with
+  // any changes made to the selected collection and clearing the selected collection state.
+  const onBack = (collection: Collection) => {
+    window.history.pushState({}, "", "/")
+    setCollections((prevCollections) => prevCollections.map((item) => (item.id === collection.id ? collection : item)))
+    setSelectedCollection(null)
   }
 
   // Load the user's collections from the local database when the component mounts
@@ -118,6 +122,18 @@ export default function Page() {
     }
     loadCollections()
   }, [setCollections, t])
+
+  if (view === "recorder") {
+    if (selectedCollection) {
+      return <CollectionRecorder collection={selectedCollection} onBack={onBack} />
+    } else {
+      const collectionId = searchParams.get("collectionId")
+      const collection = collections.find((c) => c.id === collectionId)
+      if (collection) {
+        return <CollectionRecorder collection={collection} onBack={onBack} />
+      }
+    }
+  }
 
   // Show the main view with the user's collections and options to create or delete collections
   return (
@@ -155,8 +171,8 @@ export default function Page() {
                 key={collection.id}
                 collection={collection}
                 onOpen={() => {
+                  window.history.pushState({}, "", `/?view=recorder&collectionId=${collection.id}`)
                   setSelectedCollection(collection)
-                  router.push(`/recorder/`)
                 }}
                 onDelete={() => setCollectionToDelete(collection)}
               />
@@ -191,5 +207,13 @@ export default function Page() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <HomeView />
+    </Suspense>
   )
 }

@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
-import { CollectionProvider } from "@/providers/collection-provider"
 import { I18nProvider } from "@/providers/i18n-provider"
 import { ThemeProvider } from "@/providers/theme-provider"
 import type { Metadata, Viewport } from "next"
@@ -85,11 +84,9 @@ export default async function RootLayout({
     >
       <body className="h-full overflow-hidden">
         <div className="h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
-          <CollectionProvider>
-            <ThemeProvider>
-              <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
-            </ThemeProvider>
-          </CollectionProvider>
+          <ThemeProvider>
+            <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
+          </ThemeProvider>
         </div>
         <Toaster />
       </body>
