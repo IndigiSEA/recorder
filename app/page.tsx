@@ -88,7 +88,6 @@ function HomeView() {
   // Hook to show text, error, and success messages in the user's selected language
   const t = useTranslations()
   const [collections, setCollections] = useState<Collection[]>([])
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null)
 
   // Deletes a collection from the local database and updates the user's collections
@@ -106,7 +105,6 @@ function HomeView() {
   const onBack = (collection: Collection) => {
     window.history.pushState({}, "", "/")
     setCollections((prevCollections) => prevCollections.map((item) => (item.id === collection.id ? collection : item)))
-    setSelectedCollection(null)
   }
 
   // Load the user's collections from the local database when the component mounts
@@ -124,15 +122,11 @@ function HomeView() {
   }, [setCollections, t])
 
   if (view === "recorder") {
-    if (selectedCollection) {
-      return <CollectionRecorder collection={selectedCollection} onBack={onBack} />
-    } else {
       const collectionId = searchParams.get("collectionId")
       const collection = collections.find((c) => c.id === collectionId)
       if (collection) {
         return <CollectionRecorder collection={collection} onBack={onBack} />
       }
-    }
   }
 
   // Show the main view with the user's collections and options to create or delete collections
@@ -172,7 +166,6 @@ function HomeView() {
                 collection={collection}
                 onOpen={() => {
                   window.history.pushState({}, "", `/?view=recorder&collectionId=${collection.id}`)
-                  setSelectedCollection(collection)
                 }}
                 onDelete={() => setCollectionToDelete(collection)}
               />
