@@ -1,12 +1,22 @@
 "use client"
 
 import WordModal from "@/components/audio/recorder/word-modal"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { addRecording, Collection, Recording, Timestamp } from "@/lib/db"
+import { Chunk, Collection, Recording, Timestamp, addChunk, addRecording, getChunks, removeChunks } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
 import { useTranslations } from "next-intl"
@@ -16,12 +26,15 @@ import { toast } from "sonner"
 // Preferred MIME types for audio recording in order of preference. The first supported type is used for MediaRecorder.
 const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
 
-// Flush encoded audio every 30s instead of buffering the whole session until stop() because long recordings on iOS
+// Flush encoded audio every 10s instead of buffering the whole session until stop() because long recordings on iOS
 // can hit WebKit's memory limits and cause the page to be killed/reloaded.
-const RECORDING_TIMESLICE_MS = 30_000
+const RECORDING_TIMESLICE_MS = 10_00
 
 interface WordRecorderProps {
   collection: Collection
+  chunks: Chunk[]
+  isLoadingChunks: boolean
+  setChunks: Dispatch<SetStateAction<Chunk[]>>
   isRecording: boolean
   setIsRecording: (isRecording: boolean) => void
   setRecordings: Dispatch<SetStateAction<Recording[]>>
@@ -32,12 +45,21 @@ interface WordRecorderProps {
  * to marking timestamps for individual texts within the collection, and saves the recordings along with their
  * timestamps.
  */
-export function WordRecorder({ collection, isRecording, setIsRecording, setRecordings }: WordRecorderProps) {
+export function WordRecorder({
+  collection,
+  chunks,
+  isRecording,
+  setIsRecording,
+  setChunks,
+  setRecordings,
+  isLoadingChunks,
+}: WordRecorderProps) {
   const streamRef = useRef<MediaStream | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<BlobPart[]>([])
   const recordingStartRef = useRef<number>(0)
   const timestampsRef = useRef<Map<number, Timestamp[]>>(new Map())
+  const chunkTimestampsRef = useRef<Timestamp[]>([])
+  const chunkIdRef = useRef<number>(1)
 
   const t = useTranslations()
   const [isSaving, setIsSaving] = useState(false)
@@ -47,6 +69,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
   const [currentWordStartMs, setCurrentWordStartMs] = useState<number | null>(null)
   const [recordedWord, setRecordedWord] = useState<string>("")
   const [wordEndMarked, setWordEndMarked] = useState(false)
+  const [showUnclearedDialog, setShowUnclearedDialog] = useState(false)
 
   // Cleanup function to stop all tracks of the media stream and reset the stream reference
   const cleanupStream = () => {
@@ -56,7 +79,6 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
 
   // Set to default state when recording stops or is cancelled (when the user navigates back)
   const resetRecordingState = () => {
-    chunksRef.current = []
     timestampsRef.current = new Map()
     setSelectedWordIndex(null)
     setTimestamps(new Map())
@@ -68,7 +90,11 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
     try {
       const durationMs = Date.now() - recordingStartRef.current
 
-      const blob = new Blob(chunksRef.current, {
+      // Retrieve all recorded chunks from the database for the current collection and combine them into a single Blob.
+      const chunks = await getChunks(collection.id)
+      const blobParts = chunks.map((chunk) => chunk.blob)
+
+      const blob = new Blob(blobParts, {
         type: mediaRecorderRef.current!.mimeType || "audio/webm",
       })
 
@@ -103,9 +129,8 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
         ...collection,
         wordRecorded: recordedWords,
       }
-      
-      await addRecording(newRecording, newCollection)
 
+      await addRecording(newRecording, newCollection)
       // Update the state after successful saving
       setRecordings((prev) => [newRecording, ...prev])
     } catch (error) {
@@ -117,8 +142,15 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
   }
 
   // Starts recording audio from the user's microphone with the MediaRecorder API
-  const startRecording = async () => {
-    if (isRecording || isSaving) return
+  const startRecording = async (ignoreChunks = false) => {
+    if (isRecording || isSaving || isLoadingChunks) return
+
+    if (!ignoreChunks && chunks.length > 0) {
+      // If there are uncleared chunks from a previous recording session, prompt the user to delete them before
+      // starting a new recording.
+      setShowUnclearedDialog(true)
+      return
+    }
 
     try {
       // Request microphone access and start the MediaRecorder with the preferred MIME type supported by the browser.
@@ -126,14 +158,28 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
       streamRef.current = stream
 
       const mimeType = preferredTypes.find((candidate) => MediaRecorder.isTypeSupported(candidate))
+      localStorage.setItem("preferredMimeType", mimeType || "audio/webm")
       const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
       resetRecordingState()
 
-      // Collect the recorded audio data in chunks as it becomes available.
+      // Collect the recorded audio data in chunks as it becomes available roughly every RECORDING_TIMESLICE_MS.
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data)
+        if (event.data && event.data.size > 0) {
+          const chunk: Chunk = {
+            id: chunkIdRef.current++,
+            createdAt: new Date(),
+            collectionId: collection.id,
+            blob: event.data,
+            timestamps: chunkTimestampsRef.current,
+          }
+          addChunk(chunk)
+            .then(() => {
+              chunkTimestampsRef.current = []
+            })
+            .catch((error) => {
+              toast.error(t("errors.couldNotSaveChunk", { message: (error as Error).message }))
+            })
         }
       }
 
@@ -235,6 +281,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
       timestampsRef.current = next
       return next
     })
+    chunkTimestampsRef.current = [...chunkTimestampsRef.current, timestamp]
     setCurrentWordStartMs(null)
     setWordEndMarked(true)
   }
@@ -414,7 +461,7 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
         {/* Start/Stop Recording */}
         <div className="flex flex-wrap items-center gap-3">
           {!isRecording ? (
-            <Button size="lg" onClick={startRecording} disabled={isSaving} className="gap-2">
+            <Button size="lg" onClick={() => startRecording()} disabled={isSaving || isLoadingChunks} className="gap-2">
               <Mic className="size-5" />
               {t("recorder.startRecording")}
             </Button>
@@ -433,6 +480,37 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
         </div>
         {/* Show recording controls only when recording */}
         {isRecording && recording}
+
+        {/* Show delete chunks dialog in the unlikely event where saving fails and chunks are uncleared */}
+        <AlertDialog open={showUnclearedDialog} onOpenChange={setShowUnclearedDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("recorder.deleteChunksTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("recorder.deleteChunksDescription")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (chunks.length > 0) {
+                    const deletion = removeChunks(collection.id)
+                    toast.promise(deletion, {
+                      loading: t("loading.deletingChunks"),
+                      success: t("success.chunksDeleted"),
+                      error: (error) => t("errors.couldNotDeleteChunks", { message: (error as Error).message }),
+                    })
+                    await deletion
+                    setChunks([])
+                  }
+                  startRecording(true)
+                }}
+                variant="destructive"
+              >
+                {t("common.delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   )

@@ -22,19 +22,24 @@
     "couldNotLoadRecordings": "Could not load recordings: {message}",
     "couldNotDeleteRecording": "Could not delete recording: {message}",
     "couldNotSaveRecording": "Could not save this recording: {message}",
+    "couldNotLoadChunks": "Could not load audio chunks: {message}",
+    "couldNotSaveChunk": "Could not save audio chunk: {message}",
+    "couldNotDeleteChunks": "Could not delete audio chunks: {message}",
     "micDeniedOrUnavailable": "Microphone access was denied or unavailable: {message}"
   },
   "success": {
     "collectionCreated": "Collection created successfully.",
     "collectionDeleted": "Collection deleted successfully.",
     "recordingSaved": "Recording saved successfully.",
-    "recordingDeleted": "Recording deleted successfully."
+    "recordingDeleted": "Recording deleted successfully.",
+    "chunksDeleted": "Audio chunks deleted successfully."
   },
   "loading": {
     "recordingSaving": "Saving recording...",
     "recordingDeleting": "Deleting recording...",
     "collectionSaving": "Saving collection...",
-    "collectionDeleting": "Deleting collection..."
+    "collectionDeleting": "Deleting collection...",
+    "deletingChunks": "Deleting audio chunks..."
   },
   "validation": {
     "enterCollectionName": "Please enter a collection name.",
@@ -103,7 +108,12 @@
     "startedAt": "Started at {time}",
     "recordedRange": "Recorded: {start} - {end}",
     "selectWordToStart": "Select a word to start marking",
-    "recordingEmpty": "Recording was empty. Please try again."
+    "recordingEmpty": "Recording was empty. Please try again.",
+    "deleteChunksTitle": "Delete unsaved chunks",
+    "deleteChunksDescription": "Are you sure you want to delete all unsaved chunks? You will no longer be able to recover the unsaved recording.",
+    "recoveringRecording": "Recovering recording...",
+    "recoveredRecording": "Recording recovered successfully.",
+    "recoveringRecordingError": "Error occurred while recovering recording: {message}"
   },
   "wordModal": {
     "triggerSelectWord": "Select Word",

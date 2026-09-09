@@ -22,19 +22,24 @@
     "couldNotLoadRecordings": "Tidak dapat memuatkan rakaman: {message}",
     "couldNotDeleteRecording": "Tidak dapat memadam rakaman: {message}",
     "couldNotSaveRecording": "Tidak dapat menyimpan rakaman ini: {message}",
+    "couldNotLoadChunks": "Tidak dapat memuatkan cungku audio: {message}",
+    "couldNotSaveChunk": "Tidak dapat menyimpan cungku audio: {message}",
+    "couldNotDeleteChunks": "Tidak dapat memadam cungku audio: {message}",
     "micDeniedOrUnavailable": "Akses mikrofon ditolak atau tidak tersedia: {message}"
   },
   "success": {
     "collectionCreated": "Koleksi berjaya dicipta.",
     "collectionDeleted": "Koleksi berjaya dipadam.",
     "recordingSaved": "Rakaman berjaya disimpan.",
-    "recordingDeleted": "Rakaman berjaya dipadam."
+    "recordingDeleted": "Rakaman berjaya dipadam.",
+    "chunksDeleted": "Cungku audio berjaya dipadam."
   },
   "loading": {
     "recordingSaving": "Rakaman sedang disimpan...",
     "recordingDeleting": "Rakaman sedang dipadam...",
     "collectionSaving": "Koleksi sedang disimpan...",
-    "collectionDeleting": "Koleksi sedang dipadam..."
+    "collectionDeleting": "Koleksi sedang dipadam...",
+    "deletingChunks": "Cungku audio sedang dipadam..."
   },
   "validation": {
     "enterCollectionName": "Sila masukkan nama koleksi.",
@@ -104,7 +109,12 @@
     "startedAt": "Bermula pada {time}",
     "recordedRange": "Dirakam: {start} - {end}",
     "selectWordToStart": "Pilih perkataan untuk mula menandakan",
-    "recordingEmpty": "Rakaman kosong. Sila cuba lagi."
+    "recordingEmpty": "Rakaman kosong. Sila cuba lagi.",
+    "deleteChunksTitle": "Padam cungku yang tidak disimpan",
+    "deleteChunksDescription": "Adakah anda pasti mahu memadam semua cungku yang tidak disimpan? Anda tidak akan lagi dapat memulihkan rakaman yang tidak disimpan.",
+    "recoveringRecording": "Memulihkan rakaman...",
+    "recoveredRecording": "Rakaman berjaya dipulihkan.",
+    "recoveringRecordingError": "Ralat berlaku semasa memulihkan rakaman: {message}"
   },
   "wordModal": {
     "triggerSelectWord": "Pilih Perkataan",

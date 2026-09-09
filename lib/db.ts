@@ -64,6 +64,22 @@ export interface Recording {
   timestamps: Timestamp[]
 }
 
+/**
+ * Chunk interface representing a partial recording and associated timestamps in the database for recovery. It includes:
+ * - `id:` An auto-increment generated integer representing the chunk's index in the recording
+ * - `collectionId:` The v4 UUID of the collection this chunk belongs to
+ * - `createdAt:` A Date object representing the creation date and time of the chunk
+ * - `blob:` The recording chunk data as a Blob
+ * - `timestamps:` An array of Timestamp entries for the recorded word/sentences in this chunk
+ */
+export interface Chunk {
+  id: number
+  collectionId: string
+  createdAt: Date
+  blob: Blob
+  timestamps: Timestamp[]
+}
+
 /** Schema of the Recorder database with object stores and indexes */
 interface DB_CONFIG extends DBSchema {
   collections: {
@@ -76,12 +92,17 @@ interface DB_CONFIG extends DBSchema {
     value: Recording
     indexes: { "by-collectionId": string; "by-createdAt": Date }
   }
+  chunks: {
+    key: number
+    value: Chunk
+    indexes: { "by-collectionId": string; "by-createdAt": Date }
+  }
 }
 
 /** Database configuration. Update the version number with a **larger integer** when making changes to the schema */
 const DB_CONFIG = {
   name: "recorder-db",
-  version: 5,
+  version: 6,
 } as const
 
 /** A comparison function to sort by creation time in descending order */
@@ -104,6 +125,11 @@ function openRecorderDb() {
         const recStore = db.createObjectStore("recordings", { keyPath: "id" })
         recStore.createIndex("by-collectionId", "collectionId")
         recStore.createIndex("by-createdAt", "createdAt")
+      }
+      if (!db.objectStoreNames.contains("chunks")) {
+        const chunkStore = db.createObjectStore("chunks", { keyPath: "id" })
+        chunkStore.createIndex("by-collectionId", "collectionId")
+        chunkStore.createIndex("by-createdAt", "createdAt")
       }
     },
   })
@@ -185,26 +211,32 @@ export async function getRecordings(collectionId: string) {
  * @param recording The recording to be added.
  * @param collection The collection to be updated.
  */
-export async function addRecording(
-  recording: Recording,
-  collection: Collection
-) {
+export async function addRecording(recording: Recording, collection: Collection) {
   const db = await openRecorderDb()
 
   // Create a transaction that includes both the recordings and collections object stores to ensure atomicity
-  const tx = db.transaction(["recordings", "collections"], "readwrite")
+  const tx = db.transaction(["recordings", "collections", "chunks"], "readwrite")
   const recStore = tx.objectStore("recordings")
   const colStore = tx.objectStore("collections")
+  const chunkStore = tx.objectStore("chunks")
+  const chunkIndex = chunkStore.index("by-collectionId")
 
+  // Add the recording and update the collection in the database
   recStore.add(recording)
   colStore.put(collection)
+
+  // Remove all chunks associated with the collection
+  const chunkKeys = await chunkIndex.getAllKeys(collection.id)
+  for (const key of chunkKeys) {
+    chunkStore.delete(key)
+  }
 
   await tx.done
 }
 
 /**
  * Removes a recording from the database and updates the associated collection.
- * 
+ *
  * @param recordingId The ID of the recording to be removed.
  * @param collection The collection to be updated after removing the recording.
  */
@@ -219,5 +251,43 @@ export async function removeRecording(recordingId: string, collection: Collectio
   recStore.delete(recordingId)
   colStore.put(collection)
 
+  await tx.done
+}
+
+/**
+ * Gets all chunks for a specific collection in ascending order of index from the database.
+ *
+ * @param collectionId
+ * @returns
+ */
+export async function getChunks(collectionId: string) {
+  const db = await openRecorderDb()
+  return await db.getAllFromIndex("chunks", "by-collectionId", collectionId)
+}
+
+/**
+ * Adds a new chunk to the database.
+ *
+ * @param chunk The chunk to be added to the database.
+ */
+export async function addChunk(chunk: Chunk) {
+  const db = await openRecorderDb()
+  await db.add("chunks", chunk)
+}
+
+/**
+ * Removes all chunks associated with a specific collection from the database.
+ *
+ * @param collectionId The ID of the collection whose chunks are to be removed.
+ */
+export async function removeChunks(collectionId: string) {
+  const db = await openRecorderDb()
+  const tx = db.transaction("chunks", "readwrite")
+  const chunkStore = tx.objectStore("chunks")
+  const chunkIndex = chunkStore.index("by-collectionId")
+  const chunkKeys = await chunkIndex.getAllKeys(collectionId)
+  for (const key of chunkKeys) {
+    chunkStore.delete(key)
+  }
   await tx.done
 }
