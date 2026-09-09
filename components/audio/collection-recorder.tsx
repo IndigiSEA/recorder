@@ -21,6 +21,7 @@ export default function CollectionRecorder({
 }) {
   const t = useTranslations()
   const [recordings, setRecordings] = useState<Recording[]>([])
+  const [collectionState, setCollectionState] = useState<Collection>(collection)
 
   // Load the user's recordings when the component mounts
   useEffect(() => {
@@ -46,10 +47,14 @@ export default function CollectionRecorder({
   return (
     <main className="min-h-svh bg-background px-4 py-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-        <Recorder collection={collection} setRecordings={setRecordings} onBack={onBack} />
-        <CollectionDetails collection={collection} />
-        {/* Saved Recordings */}
-        <Player recordings={recordings} collection={collection} setRecordings={setRecordings} />
+        <Recorder collection={collectionState} setRecordings={setRecordings} onBack={onBack} />
+        <CollectionDetails collection={collectionState} />
+        <Player
+          recordings={recordings}
+          collection={collectionState}
+          setRecordings={setRecordings}
+          setCollectionState={setCollectionState}
+        />
       </div>
     </main>
   )

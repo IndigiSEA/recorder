@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { addRecording, Collection, Recording, Timestamp, updateCollection } from "@/lib/db"
+import { addRecording, Collection, Recording, Timestamp } from "@/lib/db"
 import { formatDuration } from "@/lib/utils"
 import { Check, Mic, Play, Square } from "lucide-react"
 import { useTranslations } from "next-intl"
@@ -103,7 +103,10 @@ export function WordRecorder({ collection, isRecording, setIsRecording, setRecor
         ...collection,
         wordRecorded: recordedWords,
       }
-      await Promise.all([addRecording(newRecording), updateCollection(newCollection)])
+      
+      await addRecording(newRecording, newCollection)
+
+      // Update the state after successful saving
       setRecordings((prev) => [newRecording, ...prev])
     } catch (error) {
       throw error

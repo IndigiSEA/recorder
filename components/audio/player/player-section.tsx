@@ -14,17 +14,18 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Collection, Recording, removeRecording, updateCollection } from "@/lib/db"
+import { Collection, Recording, removeRecording } from "@/lib/db"
 import { extensionFor, formatBytes, formatDuration } from "@/lib/utils"
 import { Download, FileJson, Mic, MoreVertical, Play, Trash2 } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 interface PlayerProps {
   recordings: Recording[]
   collection: Collection
-  setRecordings: (recordings: Recording[]) => void
+  setRecordings: Dispatch<SetStateAction<Recording[]>>
+  setCollectionState: Dispatch<SetStateAction<Collection>>
 }
 
 /**
@@ -125,7 +126,7 @@ function RecordingItem({
  * Player component shows the recordings for a specific collection of texts. It allows users to play, download audio
  * files, export metadata and delete recordings.
  */
-export function Player({ recordings, collection, setRecordings }: PlayerProps) {
+export function Player({ recordings, collection, setRecordings, setCollectionState }: PlayerProps) {
   const t = useTranslations()
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null)
   const [recordingUrls, setRecordingUrls] = useState<Map<string, string>>(new Map())
@@ -175,12 +176,10 @@ export function Player({ recordings, collection, setRecordings }: PlayerProps) {
   // Remove a recording from the local database and update the collection's wordRecorded state with the remaining recordings.
   const deleteRecording = async (id: string) => {
     try {
-      // Remove the recording from the database and state
-      await removeRecording(id)
       const remainingRecordings = recordings.filter((r) => r.id !== id)
 
       // Initialise a new boolean array and a map to get the array's index based on wordId
-      const newWordRecorded = new Array(collection.wordIds.length).fill(false)
+      const newWordRecorded: boolean[] = new Array(collection.wordIds.length).fill(false)
       const idMap = new Map<string, number>()
       collection.wordIds.forEach((id, index) => {
         idMap.set(id, index)
@@ -202,13 +201,15 @@ export function Player({ recordings, collection, setRecordings }: PlayerProps) {
         ...collection,
         wordRecorded: newWordRecorded,
       }
-      await updateCollection(newCollection)
 
-      // Update the recordings state and clear the selected recording if it was deleted
+      await removeRecording(id, newCollection)
+
+      // After succesful deletion, update the recordings state and clear the selected recording if it was deleted
       setRecordings(remainingRecordings)
       if (selectedRecording?.id === id) {
         setSelectedRecording(null)
       }
+      setCollectionState(newCollection)
     } catch (error) {
       throw error
     }
