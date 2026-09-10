@@ -28,7 +28,7 @@ const preferredTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
 
 // Flush encoded audio every 10s instead of buffering the whole session until stop() because long recordings on iOS
 // can hit WebKit's memory limits and cause the page to be killed/reloaded.
-const RECORDING_TIMESLICE_MS = 10_00
+const RECORDING_TIMESLICE_MS = 10_000
 
 interface WordRecorderProps {
   collection: Collection
