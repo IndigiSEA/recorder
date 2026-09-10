@@ -105,6 +105,7 @@ export function Recorder({ collection, setRecordings, onBack }: RecorderProps) {
 
       await addRecording(newRecording, newCollection)
       setRecordings((prevRecordings) => [newRecording, ...prevRecordings])
+      setChunks([])
     }
 
     const recoverRecording = async () => {
